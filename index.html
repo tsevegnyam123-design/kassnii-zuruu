@@ -126,7 +126,7 @@ function login(){
     document.getElementById("userPanel").style.display = "block";
 
     document.getElementById("result").innerText =
-      `👤 ${emp["Нэр"]} (${emp["ID"]})\n💰 ₮${emp["Дүн"]}`;
+      `👤 ${emp["Нэр"]} (${emp["ID"]})\n💰 ₮${emp["Зөрүү дүн"]}`;
 
     // Remember me
     if(document.getElementById("remember").checked){
@@ -145,7 +145,7 @@ window.onload = () => {
     let emp = JSON.parse(saved);
     document.getElementById("userPanel").style.display = "block";
     document.getElementById("result").innerText =
-      `👤 ${emp["Нэр"]} (${emp["ID"]})\n💰 ₮${emp["Дүн"]}`;
+      `👤 ${emp["Нэр"]} (${emp["ID"]})\n💰 ₮${emp["Зөрүү дүн"]}`;
   }
 }
 
