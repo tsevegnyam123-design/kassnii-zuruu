@@ -1,49 +1,71 @@
 <!DOCTYPE html>
-<html>
+<html lang="mn">
 <head>
-  <title>Сантис салбар кассны зөрүү</title>
+  <meta charset="UTF-8">
+  <title>Сантис салбар кассны зөрүү + Цалингийн задаргаа</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <style>
-    body {
-      font-family: Arial;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      margin: 0;
-      background: var(--bg);
-      color: var(--text);
-    }
-
     :root {
       --bg: #f4f6f9;
-      --text: #000;
+      --text: #111;
       --card: #fff;
+      --border: #ddd;
+      --primary: #007bff;
+      --success: #198754;
+      --danger: #dc3545;
+      --muted: #666;
     }
 
-    .dark {
+    body.dark {
       --bg: #121212;
       --text: #fff;
       --card: #1e1e1e;
+      --border: #444;
+      --muted: #bbb;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
     }
 
     .card {
       background: var(--card);
-      padding: 20px;
+      padding: 25px;
       border-radius: 15px;
-      width: 100%;
-      max-width: 350px;
-      box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+      box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+      margin-bottom: 20px;
+    }
+
+    h1, h2, h3 {
       text-align: center;
     }
 
-    input {
+    input[type="text"],
+    input[type="password"] {
       width: 100%;
       padding: 12px;
       margin: 8px 0;
       border-radius: 8px;
-      border: 1px solid #ccc;
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: var(--text);
+      font-size: 15px;
     }
 
     button {
@@ -52,113 +74,779 @@
       margin-top: 10px;
       border: none;
       border-radius: 8px;
-      background: #007bff;
+      background: var(--primary);
       color: white;
       font-size: 16px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      opacity: 0.9;
     }
 
     .small-btn {
-      background: gray;
+      background: #777;
       font-size: 14px;
     }
 
-    #result {
-      margin-top: 15px;
+    #msg {
+      text-align: center;
+      color: var(--danger);
       font-weight: bold;
+    }
+
+    .success {
+      color: var(--success);
+    }
+
+    /* Ажилтны мэдээлэл */
+    .employee-info {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 15px;
+    }
+
+    .info-box {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px;
+    }
+
+    .info-title {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 5px;
+    }
+
+    .info-value {
+      font-weight: bold;
+    }
+
+    /* Кассын зөрүү */
+    .difference {
+      background: #fff3cd;
+      color: #856404;
+      border-radius: 10px;
+      padding: 15px;
+      margin-top: 20px;
+      text-align: center;
+    }
+
+    body.dark .difference {
+      background: #594d1d;
+      color: #fff;
+    }
+
+    .difference-amount {
+      font-size: 26px;
+      font-weight: bold;
+      margin-top: 8px;
+    }
+
+    /* Цалин */
+    .salary-section {
+      margin-top: 25px;
+    }
+
+    .salary-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+    }
+
+    .salary-table th,
+    .salary-table td {
+      border: 1px solid var(--border);
+      padding: 10px;
+      text-align: left;
+    }
+
+    .salary-table th {
+      background: rgba(0,123,255,0.1);
+    }
+
+    .salary-table td:last-child {
+      text-align: right;
+      font-weight: bold;
+    }
+
+    .real-salary {
+      background: #d1e7dd;
+      color: #0f5132;
+      font-size: 18px;
+      font-weight: bold;
+    }
+
+    body.dark .real-salary {
+      background: #163c2c;
+      color: #9be2be;
+    }
+
+    .section-title {
+      border-bottom: 2px solid var(--primary);
+      padding-bottom: 8px;
+      margin-top: 30px;
+    }
+
+    .loading {
+      text-align: center;
+      color: var(--muted);
+    }
+
+    .logout {
+      background: var(--danger);
+    }
+
+    @media (max-width: 600px) {
+      .container {
+        padding: 10px;
+      }
+
+      .card {
+        padding: 15px;
+      }
+
+      .employee-info {
+        grid-template-columns: 1fr;
+      }
+
+      .salary-table {
+        font-size: 13px;
+      }
+
+      .salary-table th,
+      .salary-table td {
+        padding: 7px;
+      }
     }
   </style>
 </head>
 
 <body>
 
-<div class="card">
+<div class="container">
 
-  <h2>Нэвтрэх</h2>
+  <!-- НЭВТРЭХ -->
+  <div class="card" id="loginPanel">
 
-  <input type="text" id="empId" placeholder="ID">
-  
-  <input type="password" id="empPass" placeholder="Нууц үг" id="pass">
-  <button class="small-btn" onclick="togglePass()">👁 Show Password</button>
+    <h2>🔐 Нэвтрэх</h2>
 
-  <label>
-    <input type="checkbox" id="remember"> Намайг сана
-  </label>
+    <input
+      type="text"
+      id="empId"
+      placeholder="Ажилтны код"
+    >
 
-  <button onclick="login()">Нэвтрэх</button>
+    <input
+      type="password"
+      id="empPass"
+      placeholder="Нууц үг"
+    >
 
-  <p id="msg"></p>
+    <button class="small-btn" onclick="togglePass()">
+      👁 Нууц үг харах
+    </button>
 
-  <div id="userPanel" style="display:none;">
-    <hr>
-    <p id="result"></p>
-    <button onclick="logout()">🔄 Logout</button>
+    <label style="display:block; margin-top:15px;">
+      <input type="checkbox" id="remember">
+      Намайг сана
+    </label>
+
+    <button onclick="login()">
+      Нэвтрэх
+    </button>
+
+    <p id="msg"></p>
+
   </div>
 
-  <button class="small-btn" onclick="toggleDark()">🌙 Dark mode</button>
+
+  <!-- АЖИЛТНЫ PANEL -->
+  <div class="card" id="userPanel" style="display:none;">
+
+    <h2>👤 Ажилтны мэдээлэл</h2>
+
+    <div id="employeeInfo" class="employee-info"></div>
+
+
+    <!-- КАССНЫ ЗӨРҮҮ -->
+    <div class="difference">
+
+      <div>💰 Кассын зөрүү</div>
+
+      <div
+        id="differenceAmount"
+        class="difference-amount"
+      >
+      </div>
+
+    </div>
+
+
+    <!-- ЦАЛИНГИЙН ЗАДАРГАА -->
+    <div class="salary-section">
+
+      <h2 class="section-title">
+        💵 Цалингийн задаргаа
+      </h2>
+
+      <div id="salaryLoading" class="loading">
+        Цалингийн мэдээлэл ачаалж байна...
+      </div>
+
+      <div id="salaryResult"></div>
+
+    </div>
+
+
+    <button class="logout" onclick="logout()">
+      🔄 Гарах
+    </button>
+
+  </div>
+
+
+  <button
+    class="small-btn"
+    onclick="toggleDark()"
+  >
+    🌙 Dark mode
+  </button>
 
 </div>
 
+
 <script>
-let data = [];
-let api = "https://opensheet.elk.sh/1eQ4HH3qhpMLda1mdt76iffTw2hjt0aifH-o9wGpTfQs/final";
 
-// Load data
-fetch(api)
-  .then(res => res.json())
-  .then(json => data = json);
+/* =====================================================
+   GOOGLE SHEET API
+===================================================== */
 
-// Show password
-function togglePass(){
-  let pass = document.getElementById("empPass");
-  pass.type = pass.type === "password" ? "text" : "password";
+const finalApi =
+  "https://opensheet.elk.sh/1eQ4HH3qhpMLda1mdt76iffTw2hjt0aifH-o9wGpTfQs/final";
+
+const salaryApi =
+  "https://opensheet.elk.sh/1eQ4HH3qhpMLda1mdt76iffTw2hjt0aifH-o9wGpTfQs/tsalin";
+
+
+/* =====================================================
+   DATA
+===================================================== */
+
+let finalData = [];
+let salaryData = [];
+
+
+/* =====================================================
+   DATA АЧААЛАХ
+===================================================== */
+
+async function loadData() {
+
+  try {
+
+    const [finalResponse, salaryResponse] =
+      await Promise.all([
+        fetch(finalApi),
+        fetch(salaryApi)
+      ]);
+
+    finalData = await finalResponse.json();
+    salaryData = await salaryResponse.json();
+
+    console.log("Final data:", finalData);
+    console.log("Salary data:", salaryData);
+
+  } catch (error) {
+
+    console.error(error);
+
+    document.getElementById("msg").innerText =
+      "❌ Мэдээлэл ачаалахад алдаа гарлаа.";
+
+  }
+
 }
 
-// Login
-function login(){
-  let id = document.getElementById("empId").value;
-  let pass = document.getElementById("empPass").value;
 
-  let emp = data.find(e => e.ID == id && e.password == pass);
+/* =====================================================
+   PASSWORD SHOW / HIDE
+===================================================== */
 
-  if(emp){
-    document.getElementById("msg").innerText = "";
+function togglePass() {
 
-    document.getElementById("userPanel").style.display = "block";
+  const pass =
+    document.getElementById("empPass");
 
-    document.getElementById("result").innerText =
-  `👤 ${emp["Нэр"]} (${emp["ID"]})\n💰 ₮${emp["Зөрүү дүн"]}                                      MN340004000410156863 TDB TSEVEGNYAM Хүн ингэж зовоож байхаар мөнгөө хийвэл яадаг юм 🤑 `;
+  pass.type =
+    pass.type === "password"
+      ? "text"
+      : "password";
 
-    // Remember me
-    if(document.getElementById("remember").checked){
-      localStorage.setItem("user", JSON.stringify(emp));
+}
+
+
+/* =====================================================
+   LOGIN
+===================================================== */
+
+function login() {
+
+  const id =
+    document.getElementById("empId").value.trim();
+
+  const pass =
+    document.getElementById("empPass").value.trim();
+
+
+  if (!id || !pass) {
+
+    document.getElementById("msg").innerText =
+      "❌ Ажилтны код болон нууц үгээ оруулна уу.";
+
+    return;
+
+  }
+
+
+  /* -----------------------------
+     FINAL SHEET-ЭЭС АЖИЛТАН ХАЙХ
+  ----------------------------- */
+
+  const emp = finalData.find(e =>
+    String(e.ID).trim() === id &&
+    String(e.password).trim() === pass
+  );
+
+
+  if (!emp) {
+
+    document.getElementById("msg").innerText =
+      "❌ Ажилтны код эсвэл нууц үг буруу байна.";
+
+    return;
+
+  }
+
+
+  document.getElementById("msg").innerText = "";
+
+
+  /* -----------------------------
+     PANEL
+  ----------------------------- */
+
+  document.getElementById("loginPanel").style.display =
+    "none";
+
+  document.getElementById("userPanel").style.display =
+    "block";
+
+
+  /* -----------------------------
+     АЖИЛТНЫ МЭДЭЭЛЭЛ
+  ----------------------------- */
+
+  showEmployeeInfo(emp);
+
+
+  /* -----------------------------
+     КАССНЫ ЗӨРҮҮ
+  ----------------------------- */
+
+  showDifference(emp);
+
+
+  /* -----------------------------
+     ЦАЛИН
+  ----------------------------- */
+
+  showSalary(emp);
+
+
+  /* -----------------------------
+     REMEMBER
+  ----------------------------- */
+
+  if (
+    document.getElementById("remember").checked
+  ) {
+
+    localStorage.setItem(
+      "user",
+      JSON.stringify(emp)
+    );
+
+  }
+
+}
+
+
+/* =====================================================
+   АЖИЛТНЫ МЭДЭЭЛЭЛ
+===================================================== */
+
+function showEmployeeInfo(emp) {
+
+  document.getElementById("employeeInfo").innerHTML = `
+
+    <div class="info-box">
+      <div class="info-title">Ажилтны код</div>
+      <div class="info-value">
+        ${safe(emp["ID"])}
+      </div>
+    </div>
+
+    <div class="info-box">
+      <div class="info-title">Нэр</div>
+      <div class="info-value">
+        ${safe(emp["Нэр"])}
+      </div>
+    </div>
+
+    <div class="info-box">
+      <div class="info-title">Салбар</div>
+      <div class="info-value">
+        ${safe(emp["Салбар"] || emp["Салбар нэгж"])}
+      </div>
+    </div>
+
+    <div class="info-box">
+      <div class="info-title">Албан тушаал</div>
+      <div class="info-value">
+        ${safe(emp["Албан тушаал"])}
+      </div>
+    </div>
+
+  `;
+
+}
+
+
+/* =====================================================
+   КАССНЫ ЗӨРҮҮ
+===================================================== */
+
+function showDifference(emp) {
+
+  const amount =
+    emp["Зөрүү дүн"] || 0;
+
+  document.getElementById(
+    "differenceAmount"
+  ).innerText =
+    "₮" + formatMoney(amount);
+
+}
+
+
+/* =====================================================
+   ЦАЛИНГИЙН ЗАДАРГАА
+===================================================== */
+
+function showSalary(emp) {
+
+  const salaryLoading =
+    document.getElementById("salaryLoading");
+
+  const salaryResult =
+    document.getElementById("salaryResult");
+
+
+  salaryLoading.style.display =
+    "block";
+
+  salaryResult.innerHTML =
+    "";
+
+
+  /*
+    final sheet-ийн ID
+    =
+    tsalin sheet-ийн "Ажилтны код"
+  */
+
+  const employeeId =
+    String(emp["ID"]).trim();
+
+
+  const salary =
+    salaryData.find(s =>
+      String(s["Ажилтны код"]).trim() === employeeId
+    );
+
+
+  salaryLoading.style.display =
+    "none";
+
+
+  if (!salary) {
+
+    salaryResult.innerHTML = `
+      <p style="text-align:center; color:#dc3545;">
+        ❌ Энэ ажилтны цалингийн мэдээлэл олдсонгүй.
+      </p>
+    `;
+
+    return;
+
+  }
+
+
+  /*
+    Цалингийн sheet-ийн баганууд
+  */
+
+  const fields = [
+
+    "Үндсэн цалин",
+    "Фонт цаг",
+    "Өдрийн цаг",
+    "Шөнийн цаг",
+    "Илүү цаг",
+    "Өдрийн цалин",
+    "Шөнийн цалин",
+    "Баярын нэмэгдэл",
+    "Бодогдсон цалин",
+    "Унааны нэмэгдэл",
+    "Хоолны нэмэгдэл",
+    "SOP",
+    "KPI",
+    "BM LOSS",
+    "Бусад нэмэгдэл",
+    "Нийт нэмэгдэлийн дүн",
+    "Олговол зохих",
+    "НДШ /Ажилтанаас/",
+    "ХХОАТ",
+    "ХХОАТ хөнглөлт",
+    "Нийт суутгал",
+    "Бодит цалин"
+
+  ];
+
+
+  let html = `
+
+    <table class="salary-table">
+
+      <thead>
+        <tr>
+          <th>Цалингийн үзүүлэлт</th>
+          <th>Дүн</th>
+        </tr>
+      </thead>
+
+      <tbody>
+  `;
+
+
+  fields.forEach(field => {
+
+    const value =
+      salary[field] ?? "";
+
+
+    const isRealSalary =
+      field === "Бодит цалин";
+
+
+    html += `
+
+      <tr class="${isRealSalary ? "real-salary" : ""}">
+
+        <td>
+          ${safe(field)}
+        </td>
+
+        <td>
+          ${formatSalary(value)}
+        </td>
+
+      </tr>
+
+    `;
+
+  });
+
+
+  html += `
+
+      </tbody>
+
+    </table>
+
+  `;
+
+
+  salaryResult.innerHTML =
+    html;
+
+}
+
+
+/* =====================================================
+   МӨНГӨНИЙ FORMAT
+===================================================== */
+
+function formatSalary(value) {
+
+  if (
+    value === null ||
+    value === undefined ||
+    value === ""
+  ) {
+
+    return "-";
+
+  }
+
+
+  const number =
+    Number(
+      String(value)
+        .replace(/,/g, "")
+        .replace(/₮/g, "")
+        .trim()
+    );
+
+
+  if (!isNaN(number)) {
+
+    return "₮" +
+      number.toLocaleString("mn-MN");
+
+  }
+
+
+  return safe(value);
+
+}
+
+
+/* =====================================================
+   MONEY FORMAT
+===================================================== */
+
+function formatMoney(value) {
+
+  const number =
+    Number(
+      String(value)
+        .replace(/,/g, "")
+        .replace(/₮/g, "")
+    );
+
+
+  if (isNaN(number)) {
+
+    return value;
+
+  }
+
+
+  return number.toLocaleString("mn-MN");
+
+}
+
+
+/* =====================================================
+   HTML SAFE
+===================================================== */
+
+function safe(value) {
+
+  if (
+    value === null ||
+    value === undefined
+  ) {
+
+    return "";
+
+  }
+
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+
+}
+
+
+/* =====================================================
+   AUTO LOGIN
+===================================================== */
+
+window.onload = async function() {
+
+  await loadData();
+
+
+  const saved =
+    localStorage.getItem("user");
+
+
+  if (saved) {
+
+    try {
+
+      const emp =
+        JSON.parse(saved);
+
+
+      document.getElementById(
+        "loginPanel"
+      ).style.display = "none";
+
+
+      document.getElementById(
+        "userPanel"
+      ).style.display = "block";
+
+
+      showEmployeeInfo(emp);
+
+      showDifference(emp);
+
+      showSalary(emp);
+
+
+    } catch (error) {
+
+      localStorage.removeItem("user");
+
     }
 
-  } else {
-    document.getElementById("msg").innerText = "❌ Буруу мэдээлэл";
   }
-}
 
-// Auto login
-window.onload = () => {
-  let saved = localStorage.getItem("user");
-  if(saved){
-    let emp = JSON.parse(saved);
-    document.getElementById("userPanel").style.display = "block";
-    document.getElementById("result").innerText =
-      `👤 ${emp["Нэр"]} (${emp["ID"]})\n💰 ₮${emp["Зөрүү дүн"]}`;
-  }
-}
+};
 
-// Logout
-function logout(){
+
+/* =====================================================
+   LOGOUT
+===================================================== */
+
+function logout() {
+
   localStorage.removeItem("user");
+
   location.reload();
+
 }
 
-// Dark mode
-function toggleDark(){
+
+/* =====================================================
+   DARK MODE
+===================================================== */
+
+function toggleDark() {
+
   document.body.classList.toggle("dark");
+
 }
+
 </script>
 
 </body>
