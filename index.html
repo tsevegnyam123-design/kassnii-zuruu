@@ -1,318 +1,510 @@
 <!DOCTYPE html>
 <html lang="mn">
 <head>
-  <meta charset="UTF-8">
-  <title>Нарны титэм салбар кассны зөрүү + Цалингийн задаргаа</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8">
+<title>GS25 · Ажилтны портал</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <style>
-    :root {
-      --bg: #f4f6f9;
-      --text: #111;
-      --card: #fff;
-      --border: #ddd;
-      --primary: #007bff;
-      --success: #198754;
-      --danger: #dc3545;
-      --muted: #666;
-    }
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
 
-    body.dark {
-      --bg: #121212;
-      --text: #fff;
-      --card: #1e1e1e;
-      --border: #444;
-      --muted: #bbb;
-    }
+<style>
+  :root {
+    --gs-yellow: #DCEBFF;
+    --gs-yellow-deep: #BBD8FF;
+    --gs-navy: #123A8C;
+    --gs-navy-2: #1D4ED810;
+    --gs-blue: #1D4ED8;
+    --bg: #F2F5FC;
+    --card: #FFFFFF;
+    --border: #DCE4F5;
+    --text: #10173A;
+    --muted: #5C6790;
+    --success: #17864F;
+    --success-bg: #E9F7EF;
+    --danger: #D8392C;
+    --danger-bg: #FDECEA;
+    --alert-bg: #E8F0FF;
+    --alert-border: #B9D0FA;
+    --shadow: 0 10px 30px -12px rgba(18, 58, 140, 0.20);
+  }
 
-    * {
-      box-sizing: border-box;
-    }
+  body.dark {
+    --bg: #0A0F22;
+    --card: #101836;
+    --border: #223061;
+    --text: #EAEEFC;
+    --muted: #8C97C4;
+    --success: #4ADE95;
+    --success-bg: #10261C;
+    --danger: #FF7A6E;
+    --danger-bg: #2B1512;
+    --alert-bg: #14204A;
+    --alert-border: #29418C;
+    --shadow: 0 10px 30px -12px rgba(0, 0, 0, 0.55);
+  }
 
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      background: var(--bg);
-      color: var(--text);
-      min-height: 100vh;
-    }
+  * { box-sizing: border-box; }
 
-    .container {
-      width: 100%;
-      max-width: 800px;
-      margin: 0 auto;
-      padding: 20px;
-    }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Manrope', -apple-system, 'Segoe UI', sans-serif;
+    transition: background .25s ease, color .25s ease;
+  }
 
-    .card {
-      background: var(--card);
-      padding: 25px;
-      border-radius: 15px;
-      box-shadow: 0 5px 20px rgba(0,0,0,0.15);
-      margin-bottom: 20px;
-    }
+  .shell {
+    max-width: 460px;
+    margin: 0 auto;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
 
-    h1, h2, h3 {
-      text-align: center;
-    }
+  /* ---------- Header ---------- */
 
-    input[type="text"],
-    input[type="password"] {
-      width: 100%;
-      padding: 12px;
-      margin: 8px 0;
-      border-radius: 8px;
-      border: 1px solid var(--border);
-      background: var(--card);
-      color: var(--text);
-      font-size: 15px;
-    }
+  .brandbar {
+    background: var(--gs-navy);
+    color: #fff;
+    padding: 22px 20px 26px;
+    position: relative;
+    overflow: hidden;
+  }
 
-    button {
-      width: 100%;
-      padding: 12px;
-      margin-top: 10px;
-      border: none;
-      border-radius: 8px;
-      background: var(--primary);
-      color: white;
-      font-size: 16px;
-      cursor: pointer;
-    }
+  .brandbar::after {
+    content: "";
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    height: 6px;
+    background: var(--gs-yellow);
+  }
 
-    button:hover {
-      opacity: 0.9;
-    }
+  .brand-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
 
-    .small-btn {
-      background: #777;
-      font-size: 14px;
-    }
+  .wordmark {
+    display: flex;
+    align-items: baseline;
+    gap: 3px;
+  }
 
-    #msg {
-      text-align: center;
-      color: var(--danger);
-      font-weight: bold;
-    }
+  .wordmark .mark {
+    background: var(--gs-yellow);
+    color: var(--gs-navy);
+    font-weight: 800;
+    font-size: 22px;
+    letter-spacing: -0.5px;
+    padding: 3px 9px 4px;
+    border-radius: 6px;
+  }
 
-    .success {
-      color: var(--success);
-    }
+  .wordmark .num {
+    font-weight: 800;
+    font-size: 22px;
+    letter-spacing: -0.5px;
+    color: #fff;
+  }
 
-    /* Ажилтны мэдээлэл */
-    .employee-info {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-      margin-top: 15px;
-    }
+  .brand-sub {
+    margin-top: 6px;
+    font-size: 13px;
+    color: #C8CFE3;
+    font-weight: 600;
+  }
 
-    .info-box {
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 10px;
-    }
+  .icon-btn {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.16);
+    background: rgba(255,255,255,0.08);
+    color: #fff;
+    font-size: 17px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+  }
 
-    .info-title {
-      font-size: 12px;
-      color: var(--muted);
-      margin-bottom: 5px;
-    }
+  .icon-btn:hover { background: rgba(255,255,255,0.15); }
 
-    .info-value {
-      font-weight: bold;
-    }
+  /* ---------- Main ---------- */
 
-    /* Кассын зөрүү */
-    .difference {
-      background: #fff3cd;
-      color: #856404;
-      border-radius: 10px;
-      padding: 15px;
-      margin-top: 20px;
-      text-align: center;
-    }
+  main {
+    flex: 1;
+    padding: 20px 16px 40px;
+  }
 
-    body.dark .difference {
-      background: #594d1d;
-      color: #fff;
-    }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    box-shadow: var(--shadow);
+    padding: 22px 20px;
+    margin-bottom: 16px;
+  }
 
-    .difference-amount {
-      font-size: 26px;
-      font-weight: bold;
-      margin-top: 8px;
-    }
+  h2.card-title {
+    margin: 0 0 16px;
+    font-size: 16px;
+    font-weight: 700;
+    text-align: left;
+  }
 
-    /* Цалин */
-    .salary-section {
-      margin-top: 25px;
-    }
+  label.field-label {
+    display: block;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
 
-    .salary-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 15px;
-    }
+  .field {
+    margin-bottom: 14px;
+  }
 
-    .salary-table th,
-    .salary-table td {
-      border: 1px solid var(--border);
-      padding: 10px;
-      text-align: left;
-    }
+  .pass-wrap {
+    position: relative;
+  }
 
-    .salary-table th {
-      background: rgba(0,123,255,0.1);
-    }
+  input[type="text"],
+  input[type="password"] {
+    width: 100%;
+    padding: 12px 14px;
+    border-radius: 10px;
+    border: 1.5px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
+    font-size: 15px;
+    font-family: inherit;
+    outline: none;
+    transition: border-color .15s ease;
+  }
 
-    .salary-table td:last-child {
-      text-align: right;
-      font-weight: bold;
-    }
+  input[type="text"]:focus,
+  input[type="password"]:focus {
+    border-color: var(--gs-blue);
+  }
 
-    .real-salary {
-      background: #d1e7dd;
-      color: #0f5132;
-      font-size: 18px;
-      font-weight: bold;
-    }
+  .pass-wrap input { padding-right: 44px; }
 
-    body.dark .real-salary {
-      background: #163c2c;
-      color: #9be2be;
-    }
+  .eye-btn {
+    position: absolute;
+    right: 6px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 34px;
+    height: 34px;
+    border: none;
+    background: transparent;
+    color: var(--muted);
+    font-size: 16px;
+    cursor: pointer;
+    border-radius: 8px;
+  }
 
-    .section-title {
-      border-bottom: 2px solid var(--primary);
-      padding-bottom: 8px;
-      margin-top: 30px;
-    }
+  .eye-btn:hover { background: var(--gs-navy-2); }
 
-    .loading {
-      text-align: center;
-      color: var(--muted);
-    }
+  .remember-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13.5px;
+    color: var(--muted);
+    font-weight: 600;
+    margin: 4px 0 18px;
+  }
 
-    .logout {
-      background: var(--danger);
-    }
+  .remember-row input { accent-color: var(--gs-blue); width: 16px; height: 16px; }
 
-    @media (max-width: 600px) {
-      .container {
-        padding: 10px;
-      }
+  button.primary {
+    width: 100%;
+    padding: 13px;
+    border: none;
+    border-radius: 10px;
+    background: var(--gs-blue);
+    color: #fff;
+    font-size: 15.5px;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    transition: transform .1s ease, opacity .15s ease;
+  }
 
-      .card {
-        padding: 15px;
-      }
+  button.primary:hover { opacity: 0.92; }
+  button.primary:active { transform: scale(0.99); }
 
-      .employee-info {
-        grid-template-columns: 1fr;
-      }
+  button.ghost-danger {
+    width: 100%;
+    padding: 13px;
+    border: 1.5px solid var(--danger);
+    border-radius: 10px;
+    background: transparent;
+    color: var(--danger);
+    font-size: 15px;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+  }
 
-      .salary-table {
-        font-size: 13px;
-      }
+  #msg {
+    margin: 12px 0 0;
+    text-align: center;
+    color: var(--danger);
+    font-weight: 700;
+    font-size: 13.5px;
+    min-height: 1px;
+  }
 
-      .salary-table th,
-      .salary-table td {
-        padding: 7px;
-      }
-    }
-  </style>
+  /* ---------- ID badge ---------- */
+
+  .badge-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    padding-bottom: 16px;
+    border-bottom: 1px dashed var(--border);
+  }
+
+  .badge-avatar {
+    width: 46px;
+    height: 46px;
+    border-radius: 12px;
+    background: var(--gs-yellow);
+    color: var(--gs-navy);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 18px;
+    flex: none;
+  }
+
+  .badge-name {
+    font-weight: 800;
+    font-size: 17px;
+    line-height: 1.25;
+  }
+
+  .badge-role {
+    font-size: 12.5px;
+    color: var(--muted);
+    font-weight: 600;
+    margin-top: 2px;
+  }
+
+  .employee-info {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .info-title {
+    font-size: 11.5px;
+    color: var(--muted);
+    font-weight: 700;
+    margin-bottom: 3px;
+  }
+
+  .info-value {
+    font-weight: 700;
+    font-size: 14.5px;
+  }
+
+  /* ---------- Cash difference ---------- */
+
+  .diff-card {
+    background: var(--alert-bg);
+    border: 1px solid var(--alert-border);
+    border-radius: 16px;
+    padding: 18px 20px;
+    margin-bottom: 16px;
+    text-align: center;
+  }
+
+  .diff-label {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text);
+    opacity: 0.75;
+  }
+
+  .diff-amount {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 28px;
+    font-weight: 700;
+    margin-top: 6px;
+    letter-spacing: -0.5px;
+  }
+
+  /* ---------- Salary receipt ---------- */
+
+  .receipt {
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+
+  .receipt-row {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    padding: 9px 14px;
+    border-bottom: 1px dashed var(--border);
+    font-size: 13.5px;
+  }
+
+  .receipt-row:last-child { border-bottom: none; }
+
+  .receipt-row .r-label {
+    color: var(--muted);
+    font-weight: 600;
+  }
+
+  .receipt-row .r-fill {
+    flex: 1;
+    border-bottom: 1px dotted var(--border);
+    transform: translateY(-3px);
+  }
+
+  .receipt-row .r-value {
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .receipt-row.total {
+    background: var(--success-bg);
+    border-top: 2px solid var(--success);
+    border-bottom: none;
+    padding: 13px 14px;
+  }
+
+  .receipt-row.total .r-label {
+    color: var(--success);
+    font-weight: 800;
+    font-size: 14px;
+  }
+
+  .receipt-row.total .r-fill { display: none; }
+
+  .receipt-row.total .r-value {
+    color: var(--success);
+    font-weight: 800;
+    font-size: 17px;
+  }
+
+  .salary-loading, .salary-empty {
+    text-align: center;
+    color: var(--muted);
+    font-size: 13.5px;
+    padding: 18px 0;
+  }
+
+  .salary-empty { color: var(--danger); }
+
+  .section-title {
+    font-size: 16px;
+    font-weight: 700;
+    margin: 24px 0 12px;
+    padding-top: 4px;
+  }
+
+  .card-note {
+    font-size: 11.5px;
+    color: var(--muted);
+    text-align: center;
+    margin-top: 14px;
+  }
+</style>
 </head>
 
 <body>
 
-<div class="container">
+<div class="shell">
 
-  <!-- НЭВТРЭХ -->
-  <div class="card" id="loginPanel">
-
-    <h2>🔐 Нэвтрэх</h2>
-
-    <input
-      type="text"
-      id="empId"
-      placeholder="Ажилтны код"
-    >
-
-    <input
-      type="password"
-      id="empPass"
-      placeholder="Нууц үг"
-    >
-
-    <button class="small-btn" onclick="togglePass()">
-      👁 Нууц үг харах
-    </button>
-
-    <label style="display:block; margin-top:15px;">
-      <input type="checkbox" id="remember">
-      Намайг сана
-    </label>
-
-    <button onclick="login()">
-      Нэвтрэх
-    </button>
-
-    <p id="msg"></p>
-
+  <div class="brandbar">
+    <div class="brand-row">
+      <div class="wordmark">
+        <span class="mark">GS</span><span class="num">25</span>
+      </div>
+      <button class="icon-btn" onclick="toggleDark()" title="Харагдах байдал">🌙</button>
+    </div>
+    <div class="brand-sub">Ажилтны портал</div>
   </div>
 
+  <main>
 
-  <!-- АЖИЛТНЫ PANEL -->
-  <div class="card" id="userPanel" style="display:none;">
+    <!-- НЭВТРЭХ -->
+    <div class="card" id="loginPanel">
 
-    <h2>👤 Ажилтны мэдээлэл</h2>
+      <h2 class="card-title">Нэвтрэх</h2>
 
-    <div id="employeeInfo" class="employee-info"></div>
-
-
-    <!-- КАССНЫ ЗӨРҮҮ -->
-    <div class="difference">
-
-      <div>💰 Кассын зөрүү</div>
-
-      <div
-        id="differenceAmount"
-        class="difference-amount"
-      >
+      <div class="field">
+        <label class="field-label">Ажилтны код</label>
+        <input type="text" id="empId" placeholder="Жишээ: 10234">
       </div>
+
+      <div class="field">
+        <label class="field-label">Нууц үг</label>
+        <div class="pass-wrap">
+          <input type="password" id="empPass" placeholder="Нууц үг">
+          <button class="eye-btn" onclick="togglePass()" title="Нууц үг харах">👁</button>
+        </div>
+      </div>
+
+      <label class="remember-row">
+        <input type="checkbox" id="remember">
+        Намайг сана
+      </label>
+
+      <button class="primary" onclick="login()">Нэвтрэх</button>
+
+      <p id="msg"></p>
 
     </div>
 
 
-    <!-- ЦАЛИНГИЙН ЗАДАРГАА -->
-    <div class="salary-section">
+    <!-- АЖИЛТНЫ PANEL -->
+    <div id="userPanel" style="display:none;">
 
-      <h2 class="section-title">
-        💵 Цалингийн задаргаа
-      </h2>
+      <div class="card">
+        <div class="badge-head">
+          <div class="badge-avatar" id="badgeInitial">·</div>
+          <div>
+            <div class="badge-name" id="badgeName">—</div>
+            <div class="badge-role" id="badgeRole">—</div>
+          </div>
+        </div>
 
-      <div id="salaryLoading" class="loading">
-        Цалингийн мэдээлэл ачаалж байна...
+        <div id="employeeInfo" class="employee-info"></div>
       </div>
 
-      <div id="salaryResult"></div>
+      <div class="diff-card">
+        <div class="diff-label">Кассын зөрүү</div>
+        <div id="differenceAmount" class="diff-amount">—</div>
+      </div>
+
+      <div class="section-title">Цалингийн тооцоо</div>
+
+      <div class="card" style="padding:14px 0;">
+        <div id="salaryLoading" class="salary-loading">Цалингийн мэдээлэл ачаалж байна…</div>
+        <div id="salaryResult"></div>
+      </div>
+
+      <button class="ghost-danger" onclick="logout()">Гарах</button>
 
     </div>
 
-
-    <button class="logout" onclick="logout()">
-      🔄 Гарах
-    </button>
-
-  </div>
-
-
-  <button
-    class="small-btn"
-    onclick="toggleDark()"
-  >
-    🌙 Dark mode
-  </button>
+  </main>
 
 </div>
 
@@ -489,33 +681,32 @@ function login() {
 
 function showEmployeeInfo(emp) {
 
+  const name = emp["Нэр"] || "";
+  const role = emp["Албан тушаал"] || "";
+  const branch = emp["Салбар"] || emp["Салбар нэгж"] || "";
+
+  document.getElementById("badgeInitial").innerText =
+    (String(name).trim().charAt(0) || "?").toUpperCase();
+
+  document.getElementById("badgeName").innerText =
+    safeText(name) || "—";
+
+  document.getElementById("badgeRole").innerText =
+    [safeText(role), safeText(branch)].filter(Boolean).join(" · ") || "—";
+
   document.getElementById("employeeInfo").innerHTML = `
 
-    <div class="info-box">
+    <div>
       <div class="info-title">Ажилтны код</div>
       <div class="info-value">
         ${safe(emp["ID"])}
       </div>
     </div>
 
-    <div class="info-box">
-      <div class="info-title">Нэр</div>
-      <div class="info-value">
-        ${safe(emp["Нэр"])}
-      </div>
-    </div>
-
-    <div class="info-box">
+    <div>
       <div class="info-title">Салбар</div>
       <div class="info-value">
-        ${safe(emp["Салбар"] || emp["Салбар нэгж"])}
-      </div>
-    </div>
-
-    <div class="info-box">
-      <div class="info-title">Албан тушаал</div>
-      <div class="info-value">
-        ${safe(emp["Албан тушаал"])}
+        ${safe(branch)}
       </div>
     </div>
 
@@ -584,7 +775,7 @@ function showSalary(emp) {
   if (!salary) {
 
     salaryResult.innerHTML = `
-      <p style="text-align:center; color:#dc3545;">
+      <p class="salary-empty">
         ❌ Энэ ажилтны цалингийн мэдээлэл олдсонгүй.
       </p>
     `;
@@ -626,19 +817,7 @@ function showSalary(emp) {
   ];
 
 
-  let html = `
-
-    <table class="salary-table">
-
-      <thead>
-        <tr>
-          <th>Цалингийн үзүүлэлт</th>
-          <th>Дүн</th>
-        </tr>
-      </thead>
-
-      <tbody>
-  `;
+  let html = `<div class="receipt">`;
 
 
   fields.forEach(field => {
@@ -653,30 +832,18 @@ function showSalary(emp) {
 
     html += `
 
-      <tr class="${isRealSalary ? "real-salary" : ""}">
-
-        <td>
-          ${safe(field)}
-        </td>
-
-        <td>
-          ${formatSalary(value)}
-        </td>
-
-      </tr>
+      <div class="receipt-row ${isRealSalary ? "total" : ""}">
+        <span class="r-label">${safe(field)}</span>
+        ${isRealSalary ? "" : `<span class="r-fill"></span>`}
+        <span class="r-value">${formatSalary(value)}</span>
+      </div>
 
     `;
 
   });
 
 
-  html += `
-
-      </tbody>
-
-    </table>
-
-  `;
+  html += `</div>`;
 
 
   salaryResult.innerHTML =
@@ -772,6 +939,10 @@ function safe(value) {
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
 
+}
+
+function safeText(value) {
+  return value === null || value === undefined ? "" : String(value).trim();
 }
 
 
