@@ -11,11 +11,11 @@
 
 <style>
   :root {
-    --gs-yellow: #DCEBFF;
-    --gs-yellow-deep: #BBD8FF;
-    --gs-navy: #123A8C;
-    --gs-navy-2: #1D4ED810;
-    --gs-blue: #1D4ED8;
+    --gs-yellow: #02D5EA;
+    --gs-yellow-deep: #00B7CC;
+    --gs-navy: #007CFE;
+    --gs-navy-2: #007CFE12;
+    --gs-blue: #007CFE;
     --bg: #F2F5FC;
     --card: #FFFFFF;
     --border: #DCE4F5;
@@ -789,6 +789,13 @@ function showSalary(emp) {
     Цалингийн sheet-ийн баганууд
   */
 
+  const hourFields = [
+    "Фонт цаг",
+    "Өдрийн цаг",
+    "Шөнийн цаг",
+    "Илүү цаг"
+  ];
+
   const fields = [
 
     "Үндсэн цалин",
@@ -835,7 +842,7 @@ function showSalary(emp) {
       <div class="receipt-row ${isRealSalary ? "total" : ""}">
         <span class="r-label">${safe(field)}</span>
         ${isRealSalary ? "" : `<span class="r-fill"></span>`}
-        <span class="r-value">${formatSalary(value)}</span>
+        <span class="r-value">${hourFields.includes(field) ? formatHours(value) : formatSalary(value)}</span>
       </div>
 
     `;
@@ -882,6 +889,43 @@ function formatSalary(value) {
 
     return "₮" +
       number.toLocaleString("mn-MN");
+
+  }
+
+
+  return safe(value);
+
+}
+
+
+/* =====================================================
+   ЦАГИЙН FORMAT (₮ тэмдэггүй)
+===================================================== */
+
+function formatHours(value) {
+
+  if (
+    value === null ||
+    value === undefined ||
+    value === ""
+  ) {
+
+    return "-";
+
+  }
+
+
+  const number =
+    Number(
+      String(value)
+        .replace(/,/g, "")
+        .trim()
+    );
+
+
+  if (!isNaN(number)) {
+
+    return number.toLocaleString("mn-MN", { maximumFractionDigits: 2 });
 
   }
 
