@@ -492,7 +492,7 @@
       <div class="section-title">Цалин тооцох</div>
       <section class="card" aria-labelledby="estimateTitle">
         <h2 class="card-title" id="estimateTitle">Цалингийн урьдчилсан тооцоолол</h2>
-        <p class="estimate-help">Албан тушаал, түвшин, сарын норм цаг болон ажилласан ээлжийн тоогоо оруулна уу. SOP, KPI, түвшин болон бусад урамшууллыг оруулахгүй.</p>
+        <p class="estimate-help">Албан тушаал, түвшин, сарын норм цаг болон ажилласан ээлжийн тоогоо оруулна уу. Түвшингийн нэмэгдэл автоматаар бодогдоно. SOP, KPI болон бусад урамшууллыг оруулахгүй.</p>
         <div class="estimate-grid">
           <div class="field">
             <label class="field-label" for="estimateRole">Албан тушаал</label>
@@ -534,42 +534,12 @@
             <label class="field-label" for="estimateNight">Шөнийн ээлж (тоо)</label>
             <input class="estimate-input" id="estimateNight" type="number" value="0" min="0" max="100" step="1">
           </div>
-          <div class="field">
-            <label class="field-label" for="estimateFood">Хоол / ээлж (₮)</label>
-            <input class="estimate-input" id="estimateFood" type="number" value="6000" min="0" step="500">
-          </div>
-          <div class="field">
-            <label class="field-label" for="estimateTravel">Унаа / ээлж (₮)</label>
-            <input class="estimate-input" id="estimateTravel" type="number" value="4000" min="0" step="500">
-          </div>
-          <div class="field">
-            <label class="field-label" for="estimateDayNightHours">Өдрийн ээлжийн шөнийн цаг</label>
-            <input class="estimate-input" id="estimateDayNightHours" type="number" value="2.25" min="0" max="8" step="0.01">
-          </div>
-          <div class="field">
-            <label class="field-label" for="estimateNightNightHours">Шөнийн ээлжийн шөнийн цаг</label>
-            <input class="estimate-input" id="estimateNightNightHours" type="number" value="6.25" min="0" max="8" step="0.01">
-          </div>
-          <div class="field">
-            <label class="field-label" for="estimateSop">SOP нэмэгдэл (₮)</label>
-            <input class="estimate-input" id="estimateSop" type="number" value="0" min="0" step="1000">
-          </div>
-          <div class="field">
-            <label class="field-label" for="estimateKpi">KPI нэмэгдэл (₮)</label>
-            <input class="estimate-input" id="estimateKpi" type="number" value="0" min="0" step="1000">
-          </div>
-          <div class="field full">
-            <label style="display:flex; gap:8px; align-items:center; font-size:13px; margin:4px 0 10px;">
-              <input type="checkbox" id="estimateIncludeLevel">
-              Бодит цалингийн хуудсыг харьцуулахдаа түвшингийн нэмэгдлийг оруулах
-            </label>
-          </div>
           <div class="field full">
             <label class="field-label" for="estimateRelief">ХХОАТ-ын хөнгөлөлт (₮, мэдэж байвал)</label>
             <input class="estimate-input" id="estimateRelief" type="number" value="12000" min="0" step="1000">
           </div>
         </div>
-        <p class="estimate-help">Өдрийн цаг = бодит ажилласан хоног × 8 − шөнийн цаг. Шөнийн цаг бол тусдаа нэмэгдэх цаг биш, ажилласан цагийн нэг хэсэг. Өдрийн ээлжийн шөнийн цагийг бодит цалингийн хуудсанд нийцүүлэн 2.25 гэж эхлүүлсэн; өөр бол засаж болно. Шөнийн цалинг 1.2 коэффициентоор тооцно.</p>
+        <p class="estimate-help">Тогтмол утгууд: хоол 6,000₮/хоног, унаа 4,000₮/хоног, өдрийн ээлжийн шөнийн цаг 2.25, шөнийн ээлжийн шөнийн цаг 6.25. Өдрийн цаг = ажилласан хоног × 8 − шөнийн цаг. SOP болон KPI-г тооцохгүй.</p>
         <button class="primary" type="button" onclick="calculateEstimate()">Цалин тооцоолох</button>
         <div id="estimateError" class="estimate-error" role="alert"></div>
         <div id="estimateResult" class="estimate-output" aria-live="polite"></div>
@@ -1155,13 +1125,12 @@ function calculateEstimate() {
     const morning = estimateInput("estimateMorning");
     const day = estimateInput("estimateDay");
     const night = estimateInput("estimateNight");
-    const foodRate = estimateInput("estimateFood");
-    const travelRate = estimateInput("estimateTravel");
-    const sop = estimateInput("estimateSop");
-    const kpi = estimateInput("estimateKpi");
     const relief = estimateInput("estimateRelief");
-    const dayNight = estimateInput("estimateDayNightHours");
-    const nightNight = estimateInput("estimateNightNightHours");
+    // Хэрэглэгчийн хүссэн, өөрчлөх шаардлагагүй тогтмол дүрмүүд.
+    const foodRate = 6000;
+    const travelRate = 4000;
+    const dayNight = 2.25;
+    const nightNight = 6.25;
     const workedDaysField = document.getElementById("estimateWorkedDays");
     const shifts = morning + day + night;
     const workedDays = workedDaysField.value.trim() === "" ? shifts : estimateInput("estimateWorkedDays");
@@ -1182,9 +1151,8 @@ function calculateEstimate() {
     const nightPay = hourly * nightHours * 1.2;
     const foodPay = workedDays * foodRate;
     const travelPay = workedDays * travelRate;
-    const includeLevel = document.getElementById("estimateIncludeLevel").checked;
-    const levelPay = includeLevel ? estimateRoles[role].levels[level] : 0;
-    const gross = dayPay + nightPay + foodPay + travelPay + levelPay + sop + kpi;
+    const levelPay = estimateRoles[role].levels[level];
+    const gross = dayPay + nightPay + foodPay + travelPay + levelPay;
     const social = Math.round(gross * 0.115 * 100) / 100;
     const tax = Math.max(0, Math.round(((gross - social) * 0.10 - relief) * 100) / 100);
     const net = Math.round((gross - social - tax) * 100) / 100;
@@ -1198,9 +1166,7 @@ function calculateEstimate() {
       estimateRow("Үндсэн цалин", estimateMoney(base)) +
       estimateRow("Өдрийн цалин", estimateMoney(dayPay)) +
       estimateRow("Шөнийн цалин", estimateMoney(nightPay)) +
-      estimateRow("Түвшингийн нэмэгдэл" + (includeLevel ? "" : " (ороогүй)"), estimateMoney(levelPay)) +
-      estimateRow("SOP", estimateMoney(sop)) +
-      estimateRow("KPI", estimateMoney(kpi)) +
+      estimateRow("Түвшингийн нэмэгдэл", estimateMoney(levelPay)) +
       estimateRow("Хоолны мөнгө", estimateMoney(foodPay)) +
       estimateRow("Унааны мөнгө", estimateMoney(travelPay)) +
       estimateRow("Олговол зохих", estimateMoney(gross)) +
