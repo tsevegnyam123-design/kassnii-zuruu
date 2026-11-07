@@ -489,34 +489,6 @@
     </div>
 
 
-    <!-- АЖИЛТНЫ PANEL -->
-    <div id="userPanel" style="display:none;">
-
-      <div class="card">
-        <div class="badge-head">
-          <div class="badge-avatar" id="badgeInitial">·</div>
-          <div>
-            <div class="badge-name" id="badgeName">—</div>
-            <div class="badge-role" id="badgeRole">—</div>
-          </div>
-        </div>
-
-        <div id="employeeInfo" class="employee-info"></div>
-      </div>
-
-      <div class="diff-card">
-        <div class="diff-label">Кассын зөрүү</div>
-        <div id="differenceAmount" class="diff-amount">—</div>
-      </div>
-
-      <div class="section-title">Цалингийн задаргаа</div>
-
-      <div class="card" style="padding:14px 0;">
-        <div id="salaryLoading" class="salary-loading">Цалингийн мэдээлэл ачаалж байна…</div>
-        <div id="salaryResult"></div>
-      </div>
-
-
       <div class="section-title">Цалин тооцох</div>
       <section class="card" aria-labelledby="estimateTitle">
         <h2 class="card-title" id="estimateTitle">Цалингийн урьдчилсан тооцоолол</h2>
@@ -577,6 +549,34 @@
         <div id="estimateResult" class="estimate-output" aria-live="polite"></div>
         <p class="estimate-warning">Энэ бол урьдчилсан тооцоо. Баярын цаг, илүү цаг, амралт, өвчний чөлөө, тусгай суутгал болон сарын бодит татварын хөнгөлөлт ороогүй. Сарын норм цаг болон татварын нөхцөлийг албан ёсны цалингийн хуудсаар баталгаажуулна уу.</p>
       </section>
+
+    <!-- АЖИЛТНЫ PANEL -->
+    <div id="userPanel" style="display:none;">
+
+      <div class="card">
+        <div class="badge-head">
+          <div class="badge-avatar" id="badgeInitial">·</div>
+          <div>
+            <div class="badge-name" id="badgeName">—</div>
+            <div class="badge-role" id="badgeRole">—</div>
+          </div>
+        </div>
+
+        <div id="employeeInfo" class="employee-info"></div>
+      </div>
+
+      <div class="diff-card">
+        <div class="diff-label">Кассын зөрүү</div>
+        <div id="differenceAmount" class="diff-amount">—</div>
+      </div>
+
+      <div class="section-title">Цалингийн задаргаа</div>
+
+      <div class="card" style="padding:14px 0;">
+        <div id="salaryLoading" class="salary-loading">Цалингийн мэдээлэл ачаалж байна…</div>
+        <div id="salaryResult"></div>
+      </div>
+
 
       <button class="ghost-danger" onclick="logout()">Гарах</button>
 
