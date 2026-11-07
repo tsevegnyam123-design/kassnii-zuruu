@@ -424,6 +424,22 @@
     text-align: center;
     margin-top: 14px;
   }
+
+  /* ---------- Цалингийн урьдчилсан тооцоолуур ---------- */
+  .estimate-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .estimate-grid .field { margin-bottom:0; min-width:0; }
+  .estimate-grid .full { grid-column:1/-1; }
+  .estimate-input {
+    width:100%; padding:11px 12px; border:1.5px solid var(--border);
+    border-radius:10px; background:var(--bg); color:var(--text);
+    font:inherit; font-size:14px;
+  }
+  .estimate-input:focus { outline:2px solid var(--gs-blue); outline-offset:1px; }
+  .estimate-help { font-size:12px; color:var(--muted); line-height:1.5; margin:10px 0 14px; }
+  .estimate-output { margin-top:16px; }
+  .estimate-warning { font-size:12px; color:var(--muted); line-height:1.6; margin:12px 0 0; }
+  .estimate-error { color:var(--danger); font-size:13px; font-weight:700; margin-top:10px; }
+
 </style>
 </head>
 
@@ -499,6 +515,68 @@
         <div id="salaryLoading" class="salary-loading">Цалингийн мэдээлэл ачаалж байна…</div>
         <div id="salaryResult"></div>
       </div>
+
+
+      <div class="section-title">Цалин тооцох</div>
+      <section class="card" aria-labelledby="estimateTitle">
+        <h2 class="card-title" id="estimateTitle">Цалингийн урьдчилсан тооцоолол</h2>
+        <p class="estimate-help">Албан тушаал, түвшин, сарын норм цаг болон ажилласан ээлжийн тоогоо оруулна уу. SOP, KPI, түвшин болон бусад урамшууллыг оруулахгүй.</p>
+        <div class="estimate-grid">
+          <div class="field">
+            <label class="field-label" for="estimateRole">Албан тушаал</label>
+            <select class="estimate-input" id="estimateRole" onchange="updateEstimateBase()">
+              <option value="BM">BM</option>
+              <option value="SL">SL</option>
+              <option value="Staff">Staff</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="field-label" for="estimateLevel">Level</label>
+            <select class="estimate-input" id="estimateLevel" onchange="updateEstimateBase()"></select>
+          </div>
+          <div class="field full">
+            <label class="field-label" for="estimateBase">Үндсэн цалин (₮)</label>
+            <input class="estimate-input" id="estimateBase" type="number" min="0" step="1000" readonly>
+          </div>
+          <div class="field">
+            <label class="field-label" for="estimateNorm">Сарын норм цаг</label>
+            <input class="estimate-input" id="estimateNorm" type="number" value="176" min="1" max="744" step="0.25">
+          </div>
+          <div class="field">
+            <label class="field-label" for="estimateAdvance">Авсан урьдчилгаа (₮)</label>
+            <input class="estimate-input" id="estimateAdvance" type="number" value="0" min="0" step="1000">
+          </div>
+          <div class="field">
+            <label class="field-label" for="estimateMorning">Өглөөний ээлж (тоо)</label>
+            <input class="estimate-input" id="estimateMorning" type="number" value="0" min="0" max="100" step="1">
+          </div>
+          <div class="field">
+            <label class="field-label" for="estimateDay">Өдрийн ээлж (тоо)</label>
+            <input class="estimate-input" id="estimateDay" type="number" value="0" min="0" max="100" step="1">
+          </div>
+          <div class="field full">
+            <label class="field-label" for="estimateNight">Шөнийн ээлж (тоо)</label>
+            <input class="estimate-input" id="estimateNight" type="number" value="0" min="0" max="100" step="1">
+          </div>
+          <div class="field">
+            <label class="field-label" for="estimateFood">Хоол / ээлж (₮)</label>
+            <input class="estimate-input" id="estimateFood" type="number" value="6000" min="0" step="500">
+          </div>
+          <div class="field">
+            <label class="field-label" for="estimateTravel">Унаа / ээлж (₮)</label>
+            <input class="estimate-input" id="estimateTravel" type="number" value="4000" min="0" step="500">
+          </div>
+          <div class="field full">
+            <label class="field-label" for="estimateRelief">ХХОАТ-ын хөнгөлөлт (₮, мэдэж байвал)</label>
+            <input class="estimate-input" id="estimateRelief" type="number" value="0" min="0" step="1000">
+          </div>
+        </div>
+        <p class="estimate-help">Ээлж тус бүрийн өдрийн цаг: 8. Өдрийн ээлжийн шөнийн цаг: 2.22, шөнийн ээлжийнх: 6.25. Шөнийн цагийн цалинг имэйлээс ажиглагдсан 1.2 коэффициентоор тооцно.</p>
+        <button class="primary" type="button" onclick="calculateEstimate()">Цалин тооцоолох</button>
+        <div id="estimateError" class="estimate-error" role="alert"></div>
+        <div id="estimateResult" class="estimate-output" aria-live="polite"></div>
+        <p class="estimate-warning">Энэ бол урьдчилсан тооцоо. Баярын цаг, илүү цаг, амралт, өвчний чөлөө, тусгай суутгал болон сарын бодит татварын хөнгөлөлт ороогүй. Сарын норм цаг болон татварын нөхцөлийг албан ёсны цалингийн хуудсаар баталгаажуулна уу.</p>
+      </section>
 
       <button class="ghost-danger" onclick="logout()">Гарах</button>
 
@@ -995,6 +1073,8 @@ function safeText(value) {
 ===================================================== */
 
 window.onload = async function() {
+
+  updateEstimateBase();
 
   await loadData();
 
