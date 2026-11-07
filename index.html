@@ -515,6 +515,10 @@
             <input class="estimate-input" id="estimateNorm" type="number" value="176" min="1" max="744" step="0.25">
           </div>
           <div class="field">
+            <label class="field-label" for="estimateWorkedDays">Бодит ажилласан хоног</label>
+            <input class="estimate-input" id="estimateWorkedDays" type="number" min="0" max="31" step="1" placeholder="Хоосон бол ээлжийн нийлбэр">
+          </div>
+          <div class="field">
             <label class="field-label" for="estimateAdvance">Авсан урьдчилгаа (₮)</label>
             <input class="estimate-input" id="estimateAdvance" type="number" value="0" min="0" step="1000">
           </div>
@@ -538,12 +542,34 @@
             <label class="field-label" for="estimateTravel">Унаа / ээлж (₮)</label>
             <input class="estimate-input" id="estimateTravel" type="number" value="4000" min="0" step="500">
           </div>
+          <div class="field">
+            <label class="field-label" for="estimateDayNightHours">Өдрийн ээлжийн шөнийн цаг</label>
+            <input class="estimate-input" id="estimateDayNightHours" type="number" value="2.25" min="0" max="8" step="0.01">
+          </div>
+          <div class="field">
+            <label class="field-label" for="estimateNightNightHours">Шөнийн ээлжийн шөнийн цаг</label>
+            <input class="estimate-input" id="estimateNightNightHours" type="number" value="6.25" min="0" max="8" step="0.01">
+          </div>
+          <div class="field">
+            <label class="field-label" for="estimateSop">SOP нэмэгдэл (₮)</label>
+            <input class="estimate-input" id="estimateSop" type="number" value="0" min="0" step="1000">
+          </div>
+          <div class="field">
+            <label class="field-label" for="estimateKpi">KPI нэмэгдэл (₮)</label>
+            <input class="estimate-input" id="estimateKpi" type="number" value="0" min="0" step="1000">
+          </div>
+          <div class="field full">
+            <label style="display:flex; gap:8px; align-items:center; font-size:13px; margin:4px 0 10px;">
+              <input type="checkbox" id="estimateIncludeLevel">
+              Бодит цалингийн хуудсыг харьцуулахдаа түвшингийн нэмэгдлийг оруулах
+            </label>
+          </div>
           <div class="field full">
             <label class="field-label" for="estimateRelief">ХХОАТ-ын хөнгөлөлт (₮, мэдэж байвал)</label>
-            <input class="estimate-input" id="estimateRelief" type="number" value="0" min="0" step="1000">
+            <input class="estimate-input" id="estimateRelief" type="number" value="12000" min="0" step="1000">
           </div>
         </div>
-        <p class="estimate-help">Ээлж тус бүрийн өдрийн цаг: 8. Өдрийн ээлжийн шөнийн цаг: 2.22, шөнийн ээлжийнх: 6.25. Шөнийн цагийн цалинг имэйлээс ажиглагдсан 1.2 коэффициентоор тооцно.</p>
+        <p class="estimate-help">Өдрийн цаг = бодит ажилласан хоног × 8 − шөнийн цаг. Шөнийн цаг бол тусдаа нэмэгдэх цаг биш, ажилласан цагийн нэг хэсэг. Өдрийн ээлжийн шөнийн цагийг бодит цалингийн хуудсанд нийцүүлэн 2.25 гэж эхлүүлсэн; өөр бол засаж болно. Шөнийн цалинг 1.2 коэффициентоор тооцно.</p>
         <button class="primary" type="button" onclick="calculateEstimate()">Цалин тооцоолох</button>
         <div id="estimateError" class="estimate-error" role="alert"></div>
         <div id="estimateResult" class="estimate-output" aria-live="polite"></div>
@@ -1078,9 +1104,9 @@ function safeText(value) {
    ЦАЛИНГИЙН УРЬДЧИЛСАН ТООЦООЛОЛ
 ===================================================== */
 const estimateRoles = {
-  BM: { levels: [1, 2, 3, 4], base: 1750000 },
-  SL: { levels: [2, 3, 4], base: 1300000 },
-  Staff: { levels: [1, 2], base: 1000000 }
+  BM: { levels: {1:0, 2:100000, 3:350000, 4:600000}, base:1750000 },
+  SL: { levels: {2:100000, 3:200000, 4:300000}, base:1300000 },
+  Staff: { levels: {1:100000, 2:200000}, base:1000000 }
 };
 
 function updateEstimateBase() {
@@ -1088,13 +1114,10 @@ function updateEstimateBase() {
   const levelSelect = document.getElementById("estimateLevel");
   const config = estimateRoles[role];
   if (!config) return;
-  const previousLevel = Number(levelSelect.value);
-  levelSelect.innerHTML = config.levels
-    .map(level => '<option value="' + level + '">Level ' + level + '</option>')
-    .join("");
-  if (config.levels.includes(previousLevel)) {
-    levelSelect.value = String(previousLevel);
-  }
+  const previousLevel = levelSelect.value;
+  const levels = Object.keys(config.levels);
+  levelSelect.innerHTML = levels.map(level => '<option value="' + level + '">Level ' + level + '</option>').join("");
+  if (levels.includes(previousLevel)) levelSelect.value = previousLevel;
   document.getElementById("estimateBase").value = config.base;
   document.getElementById("estimateResult").innerHTML = "";
   document.getElementById("estimateError").textContent = "";
@@ -1102,14 +1125,14 @@ function updateEstimateBase() {
 
 function estimateInput(id) {
   const el = document.getElementById(id);
-  if (!el || el.value.trim() === "") throw new Error("Бүх талбарыг бөглөнө үү.");
+  if (!el || el.value.trim() === "") throw new Error("Заавал бөглөх талбар хоосон байна.");
   const value = Number(el.value);
-  if (!Number.isFinite(value) || value < 0) throw new Error("Зөв, эерэг тоо оруулна уу.");
+  if (!Number.isFinite(value) || value < 0) throw new Error("Талбарт сөрөг эсвэл буруу тоо оруулсан байна.");
   return value;
 }
 
 function estimateMoney(amount) {
-  return "₮" + Math.round(amount).toLocaleString("mn-MN");
+  return "₮" + amount.toLocaleString("mn-MN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 function estimateRow(label, value, total = false) {
@@ -1126,6 +1149,7 @@ function calculateEstimate() {
   error.textContent = "";
   try {
     const role = document.getElementById("estimateRole").value;
+    const level = document.getElementById("estimateLevel").value;
     const norm = estimateInput("estimateNorm");
     const advance = estimateInput("estimateAdvance");
     const morning = estimateInput("estimateMorning");
@@ -1133,44 +1157,61 @@ function calculateEstimate() {
     const night = estimateInput("estimateNight");
     const foodRate = estimateInput("estimateFood");
     const travelRate = estimateInput("estimateTravel");
+    const sop = estimateInput("estimateSop");
+    const kpi = estimateInput("estimateKpi");
     const relief = estimateInput("estimateRelief");
+    const dayNight = estimateInput("estimateDayNightHours");
+    const nightNight = estimateInput("estimateNightNightHours");
+    const workedDaysField = document.getElementById("estimateWorkedDays");
+    const shifts = morning + day + night;
+    const workedDays = workedDaysField.value.trim() === "" ? shifts : estimateInput("estimateWorkedDays");
 
     if (!(norm > 0 && norm <= 744)) throw new Error("Сарын норм цагийг шалгана уу.");
-    if ([morning, day, night].some(n => !Number.isInteger(n) || n > 100)) {
-      throw new Error("Ээлжийн тоо бүхэл, 0–100 хооронд байна.");
-    }
-    const shifts = morning + day + night;
-    if (shifts > 100) throw new Error("Нийт ээлжийн тоог шалгана уу.");
+    if ([morning,day,night,workedDays].some(n => !Number.isInteger(n) || n > 100))
+      throw new Error("Ээлж болон ажилласан хоног бүхэл тоо байх ёстой.");
+    if (workedDays > 31 || shifts > 100 || dayNight > 8 || nightNight > 8)
+      throw new Error("Ажилласан хоног, ээлжийн шөнийн цагийг шалгана уу.");
+
     const base = estimateRoles[role].base;
-    const dayHours = shifts * 8;
-    const nightHours = day * 2.22 + night * 6.25;
+    const nightHours = day * dayNight + night * nightNight;
+    const workedHours = workedDays * 8;
+    const dayHours = workedHours - nightHours;
+    if (dayHours < 0) throw new Error("Шөнийн цаг нийт ажилласан цагаас их байна. Оруулсан хоног, ээлжийг шалгана уу.");
     const hourly = base / norm;
     const dayPay = hourly * dayHours;
     const nightPay = hourly * nightHours * 1.2;
-    const foodPay = shifts * foodRate;
-    const travelPay = shifts * travelRate;
-    const gross = dayPay + nightPay + foodPay + travelPay;
-    const social = gross * 0.115;
-    const tax = Math.max(0, (gross - social) * 0.1 - relief);
-    const net = gross - social - tax;
-
-    const hrs = n => n.toLocaleString("mn-MN", {maximumFractionDigits: 2});
+    const foodPay = workedDays * foodRate;
+    const travelPay = workedDays * travelRate;
+    const includeLevel = document.getElementById("estimateIncludeLevel").checked;
+    const levelPay = includeLevel ? estimateRoles[role].levels[level] : 0;
+    const gross = dayPay + nightPay + foodPay + travelPay + levelPay + sop + kpi;
+    const social = Math.round(gross * 0.115 * 100) / 100;
+    const tax = Math.max(0, Math.round(((gross - social) * 0.10 - relief) * 100) / 100);
+    const net = Math.round((gross - social - tax) * 100) / 100;
+    const transfer = Math.round((net - advance) * 100) / 100;
+    const hrs = n => n.toLocaleString("mn-MN", {maximumFractionDigits:2});
     result.innerHTML = '<div class="receipt">' +
-      estimateRow("Нийт ээлж", shifts + " ээлж") +
+      estimateRow("Нийт оруулсан ээлж", shifts + " ээлж") +
+      estimateRow("Бодит ажилласан хоног", workedDays + " хоног") +
       estimateRow("Өдрийн цаг", hrs(dayHours) + " цаг") +
       estimateRow("Шөнийн цаг", hrs(nightHours) + " цаг") +
       estimateRow("Үндсэн цалин", estimateMoney(base)) +
       estimateRow("Өдрийн цалин", estimateMoney(dayPay)) +
       estimateRow("Шөнийн цалин", estimateMoney(nightPay)) +
+      estimateRow("Түвшингийн нэмэгдэл" + (includeLevel ? "" : " (ороогүй)"), estimateMoney(levelPay)) +
+      estimateRow("SOP", estimateMoney(sop)) +
+      estimateRow("KPI", estimateMoney(kpi)) +
       estimateRow("Хоолны мөнгө", estimateMoney(foodPay)) +
       estimateRow("Унааны мөнгө", estimateMoney(travelPay)) +
-      estimateRow("Нийт бодогдсон", estimateMoney(gross)) +
+      estimateRow("Олговол зохих", estimateMoney(gross)) +
       estimateRow("НДШ (11.5%, урьдчилсан)", estimateMoney(social)) +
       estimateRow("ХХОАТ (урьдчилсан)", estimateMoney(tax)) +
-      estimateRow("Гар дээр авах", estimateMoney(net)) +
+      estimateRow("Гар дээр авах (нийт)", estimateMoney(net)) +
       estimateRow("Авсан урьдчилгаа", estimateMoney(advance)) +
-      estimateRow("Үлдэх олголт (ойролцоогоор)", estimateMoney(net - advance), true) +
-      '</div>';
+      estimateRow("Үлдэх олголт (ойролцоогоор)", estimateMoney(transfer), true) +
+      '</div>' +
+      (workedDays !== shifts ?
+        '<p class="estimate-warning">Оруулсан ээлжийн тоо бодит ажилласан хоногоос зөрж байна. Цалинг бодит ажилласан хоногт үндэслэж тооцсон.</p>' : '');
   } catch (e) {
     error.textContent = e.message;
   }
