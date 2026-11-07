@@ -489,6 +489,7 @@
     </div>
 
 
+    <div id="preLoginCalculator">
       <div class="section-title">Цалин тооцох</div>
       <section class="card" aria-labelledby="estimateTitle">
         <h2 class="card-title" id="estimateTitle">Цалингийн урьдчилсан тооцоолол</h2>
@@ -545,6 +546,8 @@
         <div id="estimateResult" class="estimate-output" aria-live="polite"></div>
         <p class="estimate-warning">Энэ бол урьдчилсан тооцоо. Баярын цаг, илүү цаг, амралт, өвчний чөлөө, тусгай суутгал болон сарын бодит татварын хөнгөлөлт ороогүй. Сарын норм цаг болон татварын нөхцөлийг албан ёсны цалингийн хуудсаар баталгаажуулна уу.</p>
       </section>
+
+    </div>
 
     <!-- АЖИЛТНЫ PANEL -->
     <div id="userPanel" style="display:none;">
@@ -713,6 +716,7 @@ function login() {
 
   document.getElementById("userPanel").style.display =
     "block";
+  document.getElementById("preLoginCalculator").style.display = "none";
 
 
   /* -----------------------------
@@ -1214,6 +1218,7 @@ window.onload = async function() {
       document.getElementById(
         "userPanel"
       ).style.display = "block";
+      document.getElementById("preLoginCalculator").style.display = "none";
 
 
       showEmployeeInfo(emp);
