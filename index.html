@@ -597,7 +597,7 @@ const finalApi =
   "https://opensheet.elk.sh/1eQ4HH3qhpMLda1mdt76iffTw2hjt0aifH-o9wGpTfQs/final";
 
 const salaryApi =
-  "https://opensheet.elk.sh/1eQ4HH3qhpMLda1mdt76iffTw2hjt0aifH-o9wGpTfQs/tsalin";
+  "https://opensheet.elk.sh/1eQ4HH3qhpMLda1mdt76iffTw2hjt0aifH-o9wGpTfQs/Tsalin";
 
 
 /* =====================================================
@@ -613,32 +613,32 @@ let salaryData = [];
 ===================================================== */
 
 async function loadData() {
-
-  try {
-
-    const [finalResponse, salaryResponse] =
-      await Promise.all([
-        fetch(finalApi),
-        fetch(salaryApi)
-      ]);
-
-    finalData = await finalResponse.json();
-    salaryData = await salaryResponse.json();
-
-    console.log("Final data:", finalData);
-    console.log("Salary data:", salaryData);
-
-  } catch (error) {
-
-    console.error(error);
-
-    document.getElementById("msg").innerText =
-      "❌ Мэдээлэл ачаалахад алдаа гарлаа.";
-
+  const msg = document.getElementById("msg");
+  const loadSheet = async (url) => {
+    const response = await fetch(url, { cache: "no-store" });
+    if (!response.ok) throw new Error("HTTP " + response.status);
+    const rows = await response.json();
+    if (!Array.isArray(rows)) throw new Error("Хүснэгтийн бүтэц буруу");
+    return rows;
+  };
+  const [employees, salaries] = await Promise.allSettled([
+    loadSheet(finalApi), loadSheet(salaryApi)
+  ]);
+  if (employees.status === "fulfilled") {
+    finalData = employees.value;
+    msg.innerText = "";
+  } else {
+    finalData = [];
+    msg.innerText = "❌ Ажилтны мэдээлэл ачаалагдсангүй. Хуудсаа шинэчилж дахин оролдоно уу.";
+    console.error("final sheet:", employees.reason);
   }
-
+  if (salaries.status === "fulfilled") {
+    salaryData = salaries.value;
+  } else {
+    salaryData = [];
+    console.error("Tsalin sheet:", salaries.reason);
+  }
 }
-
 
 /* =====================================================
    PASSWORD SHOW / HIDE
@@ -684,9 +684,14 @@ function login() {
      FINAL SHEET-ЭЭС АЖИЛТАН ХАЙХ
   ----------------------------- */
 
+  if (!finalData.length) {
+    document.getElementById("msg").innerText = "❌ Ажилтны мэдээлэл ачаалагдаагүй байна. Хуудсаа шинэчилнэ үү.";
+    return;
+  }
+
   const emp = finalData.find(e =>
-    String(e.ID).trim() === id &&
-    String(e.password).trim() === pass
+    String(e.ID ?? "").trim() === id &&
+    String(e.password ?? "").trim() === pass
   );
 
 
