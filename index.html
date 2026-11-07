@@ -1073,6 +1073,109 @@ function safeText(value) {
 }
 
 
+
+/* =====================================================
+   ЦАЛИНГИЙН УРЬДЧИЛСАН ТООЦООЛОЛ
+===================================================== */
+const estimateRoles = {
+  BM: { levels: [1, 2, 3, 4], base: 1750000 },
+  SL: { levels: [2, 3, 4], base: 1300000 },
+  Staff: { levels: [1, 2], base: 1000000 }
+};
+
+function updateEstimateBase() {
+  const role = document.getElementById("estimateRole").value;
+  const levelSelect = document.getElementById("estimateLevel");
+  const config = estimateRoles[role];
+  if (!config) return;
+  const previousLevel = Number(levelSelect.value);
+  levelSelect.innerHTML = config.levels
+    .map(level => '<option value="' + level + '">Level ' + level + '</option>')
+    .join("");
+  if (config.levels.includes(previousLevel)) {
+    levelSelect.value = String(previousLevel);
+  }
+  document.getElementById("estimateBase").value = config.base;
+  document.getElementById("estimateResult").innerHTML = "";
+  document.getElementById("estimateError").textContent = "";
+}
+
+function estimateInput(id) {
+  const el = document.getElementById(id);
+  if (!el || el.value.trim() === "") throw new Error("Бүх талбарыг бөглөнө үү.");
+  const value = Number(el.value);
+  if (!Number.isFinite(value) || value < 0) throw new Error("Зөв, эерэг тоо оруулна уу.");
+  return value;
+}
+
+function estimateMoney(amount) {
+  return "₮" + Math.round(amount).toLocaleString("mn-MN");
+}
+
+function estimateRow(label, value, total = false) {
+  return '<div class="receipt-row' + (total ? ' total' : '') + '">' +
+    '<span class="r-label">' + label + '</span>' +
+    (total ? '' : '<span class="r-fill"></span>') +
+    '<span class="r-value">' + value + '</span></div>';
+}
+
+function calculateEstimate() {
+  const result = document.getElementById("estimateResult");
+  const error = document.getElementById("estimateError");
+  result.innerHTML = "";
+  error.textContent = "";
+  try {
+    const role = document.getElementById("estimateRole").value;
+    const norm = estimateInput("estimateNorm");
+    const advance = estimateInput("estimateAdvance");
+    const morning = estimateInput("estimateMorning");
+    const day = estimateInput("estimateDay");
+    const night = estimateInput("estimateNight");
+    const foodRate = estimateInput("estimateFood");
+    const travelRate = estimateInput("estimateTravel");
+    const relief = estimateInput("estimateRelief");
+
+    if (!(norm > 0 && norm <= 744)) throw new Error("Сарын норм цагийг шалгана уу.");
+    if ([morning, day, night].some(n => !Number.isInteger(n) || n > 100)) {
+      throw new Error("Ээлжийн тоо бүхэл, 0–100 хооронд байна.");
+    }
+    const shifts = morning + day + night;
+    if (shifts > 100) throw new Error("Нийт ээлжийн тоог шалгана уу.");
+    const base = estimateRoles[role].base;
+    const dayHours = shifts * 8;
+    const nightHours = day * 2.22 + night * 6.25;
+    const hourly = base / norm;
+    const dayPay = hourly * dayHours;
+    const nightPay = hourly * nightHours * 1.2;
+    const foodPay = shifts * foodRate;
+    const travelPay = shifts * travelRate;
+    const gross = dayPay + nightPay + foodPay + travelPay;
+    const social = gross * 0.115;
+    const tax = Math.max(0, (gross - social) * 0.1 - relief);
+    const net = gross - social - tax;
+
+    const hrs = n => n.toLocaleString("mn-MN", {maximumFractionDigits: 2});
+    result.innerHTML = '<div class="receipt">' +
+      estimateRow("Нийт ээлж", shifts + " ээлж") +
+      estimateRow("Өдрийн цаг", hrs(dayHours) + " цаг") +
+      estimateRow("Шөнийн цаг", hrs(nightHours) + " цаг") +
+      estimateRow("Үндсэн цалин", estimateMoney(base)) +
+      estimateRow("Өдрийн цалин", estimateMoney(dayPay)) +
+      estimateRow("Шөнийн цалин", estimateMoney(nightPay)) +
+      estimateRow("Хоолны мөнгө", estimateMoney(foodPay)) +
+      estimateRow("Унааны мөнгө", estimateMoney(travelPay)) +
+      estimateRow("Нийт бодогдсон", estimateMoney(gross)) +
+      estimateRow("НДШ (11.5%, урьдчилсан)", estimateMoney(social)) +
+      estimateRow("ХХОАТ (урьдчилсан)", estimateMoney(tax)) +
+      estimateRow("Гар дээр авах", estimateMoney(net)) +
+      estimateRow("Авсан урьдчилгаа", estimateMoney(advance)) +
+      estimateRow("Үлдэх олголт (ойролцоогоор)", estimateMoney(net - advance), true) +
+      '</div>';
+  } catch (e) {
+    error.textContent = e.message;
+  }
+}
+
 /* =====================================================
    AUTO LOGIN
 ===================================================== */
