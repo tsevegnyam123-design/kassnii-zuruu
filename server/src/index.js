@@ -24,6 +24,31 @@ app.use('/api', rateLimit({ windowMs: 15 * 60 * 1000, limit: 100, standardHeader
 const publicIndex = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../public/index.html');
 app.get('/', (_req,res) => res.sendFile(publicIndex));
 app.get('/login.js', (_req,res) => res.sendFile(path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../public/login.js')));
+
+const resetIndex = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../public/reset.html');
+app.get('/reset-password', (_req,res) => res.sendFile(resetIndex));
+app.get('/reset.js', (_req,res) => res.sendFile(path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../public/reset.js')));
+const recoveryLimit = rateLimit({windowMs:15*60*1000,limit:5,standardHeaders:'draft-7',legacyHeaders:false});
+app.post('/api/recovery/request', recoveryLimit, async (req,res) => {
+  const email = typeof req.body?.email === 'string' ? req.body.email.trim() : '';
+  if (email.length > 254 || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) return res.status(400).json({error:'И-мэйл хаягаа шалгана уу'});
+  const redirectTo = 'https://gs25-employee-portal-git-feature-portal-ui-v2-gs-portal.vercel.app/reset-password';
+  const {error} = await supabase.auth.resetPasswordForEmail(email,{redirectTo});
+  if(error) console.error('Recovery request failed:',error.code || error.status || 'unknown');
+  res.set('Cache-Control','no-store');
+  res.json({message:'Хэрэв энэ и-мэйл бүртгэлтэй бол сэргээх холбоос илгээгдэнэ.'});
+});
+app.post('/api/recovery/complete', recoveryLimit, async (req,res) => {
+  const {access_token,password}=req.body||{};
+  if(typeof access_token!=='string'||access_token.length>4096||typeof password!=='string'||password.length<12||password.length>128) return res.status(400).json({error:'Холбоос эсвэл нууц үг тохирохгүй байна (хамгийн багадаа 12 тэмдэгт)'});
+  const {data,error}=await supabase.auth.getUser(access_token);
+  if(error||!data?.user) return res.status(401).json({error:'Сэргээх холбоос хүчингүй эсвэл хугацаа дууссан'});
+  // Use the user's own session, not the admin API, to update their password.
+  const response=await fetch(process.env.SUPABASE_URL+'/auth/v1/user',{method:'PUT',headers:{'Content-Type':'application/json',apikey:process.env.SUPABASE_SERVICE_ROLE_KEY,Authorization:'Bearer '+access_token},body:JSON.stringify({password})});
+  res.set('Cache-Control','no-store');
+  if(!response.ok) return res.status(400).json({error:'Нууц үг шинэчилж чадсангүй. Шинэ холбоос аваад дахин оролдоно уу'});
+  res.json({message:'Нууц үг шинэчлэгдлээ. Одоо нэвтэрч болно.'});
+});
 app.get('/api/health', (_req,res) => res.json({ status: 'ok' }));
 // Initial login uses the Supabase Auth email/password configured for the admin.
 // Employee-code login is not enabled until a verified code-to-auth mapping exists.
