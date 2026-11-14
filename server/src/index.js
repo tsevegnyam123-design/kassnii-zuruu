@@ -9,7 +9,9 @@ import { createClient } from '@supabase/supabase-js';
 
 const required = ['SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY', 'ALLOWED_ORIGINS'];
 for (const key of required) if (!process.env[key]) throw new Error('Missing server configuration: ' + key);
-const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY, {
+const supabaseUrl = new URL(process.env.SUPABASE_URL).origin;
+if (new URL(process.env.SUPABASE_URL).pathname !== '/') console.warn('SUPABASE_URL contained a path; normalized to project origin');
+const supabase = createClient(supabaseUrl, process.env.SUPABASE_SERVICE_ROLE_KEY, {
   auth: { persistSession: false, autoRefreshToken: false }
 });
 const allowedOrigins = process.env.ALLOWED_ORIGINS.split(',').map(s => s.trim()).filter(Boolean);
@@ -35,7 +37,7 @@ app.post('/api/recovery/request', recoveryLimit, async (req,res) => {
   if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return res.status(400).json({error:'И-мэйл хаягаа шалгана уу'});
   const redirectTo = 'https://gs25-employee-portal-git-feature-portal-ui-v2-gs-portal.vercel.app/reset-password';
   const {error} = await supabase.auth.resetPasswordForEmail(email,{redirectTo});
-  if(error) { console.error('Recovery request failed:',JSON.stringify({status:error.status,code:error.code,message:error.message})); return res.status(502).json({error:'Supabase сэргээх хүсэлтийг хүлээж авсангүй. Серверийн тохиргоог шалгах шаардлагатай.'}); }
+  if(error) { console.error('Recovery request failed:',JSON.stringify({status:error.status,code:error.code,message:error.message,projectHost:new URL(supabaseUrl).host})); return res.status(502).json({error:'Supabase сэргээх хүсэлтийг хүлээж авсангүй. Серверийн тохиргоог шалгах шаардлагатай.'}); }
   res.set('Cache-Control','no-store');
   res.json({message:'Хэрэв энэ и-мэйл бүртгэлтэй бол сэргээх холбоос илгээгдэнэ.'});
 });
@@ -45,7 +47,7 @@ app.post('/api/recovery/complete', recoveryLimit, async (req,res) => {
   const {data,error}=await supabase.auth.getUser(access_token);
   if(error||!data?.user) return res.status(401).json({error:'Сэргээх холбоос хүчингүй эсвэл хугацаа дууссан'});
   // Use the user's own session, not the admin API, to update their password.
-  const response=await fetch(process.env.SUPABASE_URL+'/auth/v1/user',{method:'PUT',headers:{'Content-Type':'application/json',apikey:process.env.SUPABASE_SERVICE_ROLE_KEY,Authorization:'Bearer '+access_token},body:JSON.stringify({password})});
+  const response=await fetch(supabaseUrl+'/auth/v1/user',{method:'PUT',headers:{'Content-Type':'application/json',apikey:process.env.SUPABASE_SERVICE_ROLE_KEY,Authorization:'Bearer '+access_token},body:JSON.stringify({password})});
   res.set('Cache-Control','no-store');
   if(!response.ok) return res.status(400).json({error:'Нууц үг шинэчилж чадсангүй. Шинэ холбоос аваад дахин оролдоно уу'});
   res.json({message:'Нууц үг шинэчлэгдлээ. Одоо нэвтэрч болно.'});
@@ -56,7 +58,7 @@ app.get('/api/health', (_req,res) => res.json({ status: 'ok' }));
 app.post('/api/login', rateLimit({windowMs:15*60*1000,limit:10,standardHeaders:'draft-7',legacyHeaders:false}), async (req,res) => {
   const { email, password } = req.body || {};
   if (typeof email !== 'string' || typeof password !== 'string' || email.length > 254 || password.length > 1024 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return res.status(400).json({error:'Valid email and password required'});
-  const client = createClient(process.env.SUPABASE_URL,process.env.SUPABASE_SERVICE_ROLE_KEY,{auth:{persistSession:false,autoRefreshToken:false}});
+  const client = createClient(supabaseUrl,process.env.SUPABASE_SERVICE_ROLE_KEY,{auth:{persistSession:false,autoRefreshToken:false}});
   const {data,error} = await client.auth.signInWithPassword({email,password});
   res.set('Cache-Control','no-store');
   if(error || !data?.session?.access_token) return res.status(401).json({error:'Invalid email or password'});
