@@ -29,7 +29,7 @@ app.get('/api/health', (_req,res) => res.json({ status: 'ok' }));
 // Employee-code login is not enabled until a verified code-to-auth mapping exists.
 app.post('/api/login', rateLimit({windowMs:15*60*1000,limit:10,standardHeaders:'draft-7',legacyHeaders:false}), async (req,res) => {
   const { email, password } = req.body || {};
-  if (typeof email !== 'string' || typeof password !== 'string' || email.length > 254 || password.length > 1024 || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) return res.status(400).json({error:'Valid email and password required'});
+  if (typeof email !== 'string' || typeof password !== 'string' || email.length > 254 || password.length > 1024 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return res.status(400).json({error:'Valid email and password required'});
   const client = createClient(process.env.SUPABASE_URL,process.env.SUPABASE_SERVICE_ROLE_KEY,{auth:{persistSession:false,autoRefreshToken:false}});
   const {data,error} = await client.auth.signInWithPassword({email,password});
   res.set('Cache-Control','no-store');
