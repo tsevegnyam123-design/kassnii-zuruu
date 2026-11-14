@@ -3,7 +3,7 @@ const fields=[['Овог','surname'],['Нэр','given_name'],['Ажилтны к
 for(const [label,name,type] of fields){const el=document.createElement('label');el.textContent=label;const input=document.createElement('input');input.name=name;input.type=type||'text';input.autocomplete='off';input.maxLength=300;input.disabled=true;el.append(input);$('profileFields').append(el);}
 $('clearProfile').addEventListener('click',()=>{$('profileForm').reset();});
 document.querySelectorAll('[data-tab]').forEach(button=>button.addEventListener('click',()=>{const tab=button.dataset.tab;document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b===button));document.querySelectorAll('.section').forEach(s=>s.classList.toggle('active',s.id===tab));}));
-$('loginForm').addEventListener('submit',async event=>{event.preventDefault();$('message').textContent='Нэвтэрч байна…';$('message').className='message';$('submit').disabled=true;try{const response=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:$('email').value,password:$('password').value}),cache:'no-store'});const data=await response.json();if(!response.ok)throw Error(data.error||'Нэвтрэх боломжгүй');token=data.access_token;$('password').value='';const meResponse=await fetch('/api/me',{headers:{Authorization:'Bearer '+token},cache:'no-store'});const me=await meResponse.json();if(!meResponse.ok)throw Error(me.error||'Мэдээлэл ачаалж чадсангүй');isAdmin=me.role==='hr_admin';const name=me.profile?.given_name||'Туршилтын хэрэглэгч';$('account').textContent=name+' · Эрх: '+(me.role||'employee');$('who').textContent=name;$('roleLabel').textContent=me.role==='hr_admin'?'HR админ':'Ажилтан';$('admin').hidden=me.role!=='hr_admin';$('loginView').classList.add('hidden');$('portal').classList.remove('hidden');await loadProfile();if(isAdmin)await loadEmployees();}catch(err){token=null;$('message').className='message error';$('message').textContent=err.message||'Алдаа гарлаа';}finally{$('submit').disabled=false;}});
+$('loginForm').addEventListener('submit',async event=>{event.preventDefault();$('message').textContent='Нэвтэрч байна…';$('message').className='message';$('submit').disabled=true;try{const response=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:$('email').value,password:$('password').value}),cache:'no-store'});const data=await response.json();if(!response.ok)throw Error(data.error||'Нэвтрэх боломжгүй');token=data.access_token;$('password').value='';const meResponse=await fetch('/api/me',{headers:{Authorization:'Bearer '+token},cache:'no-store'});const me=await meResponse.json();if(!meResponse.ok)throw Error(me.error||'Мэдээлэл ачаалж чадсангүй');isAdmin=me.role==='hr_admin';const name=me.profile?.given_name||'Туршилтын хэрэглэгч';$('account').textContent=name+' · Эрх: '+(me.role||'employee');$('who').textContent=name;$('roleLabel').textContent=me.role==='hr_admin'?'HR админ':'Ажилтан';$('admin').hidden=me.role!=='hr_admin';$('loginView').classList.add('hidden');$('portal').classList.remove('hidden');await loadProfile();if(isAdmin)await loadEmployees();await loadStaff();}catch(err){token=null;$('message').className='message error';$('message').textContent=err.message||'Алдаа гарлаа';}finally{$('submit').disabled=false;}});
 $('logout').addEventListener('click',()=>{token=null;isAdmin=false;$('profileForm').reset();$('saveProfile').disabled=true;$('hrEmployeeCard').classList.add('hidden');$('portal').classList.add('hidden');$('loginView').classList.remove('hidden');$('who').textContent='Туршилтын орчин';$('message').textContent='Гарлаа';$('message').className='message success';});
 $('branchSearch').addEventListener('input',()=>{$('branchResult').textContent='Салбарын баталгаатай жагсаалт холбогдоогүй тул хайлтын үр дүн байхгүй.';});
 
@@ -44,3 +44,55 @@ async function loadEmployees(){
     for(const employee of result.employees){const tr=document.createElement('tr');for(const key of ['employee_code','surname','given_name','job_title']){const td=document.createElement('td');td.textContent=employee[key]??'—';tr.append(td);}body.append(tr);}table.append(body);$('hrEmployeeList').replaceChildren(table);
   }catch(err){$('hrEmployeeStatus').textContent=err.message;}
 }
+
+let editingStaffCode=null;
+const staffInputs={};
+for(const [label,name,type] of fields.filter(x=>x[1]!=='branch_code'&&x[1]!=='employee_code')){
+ const el=document.createElement('label');el.textContent=label;
+ const input=document.createElement('input');input.name=name;input.type=type||'text';input.maxLength=300;input.autocomplete='off';
+ el.append(input);$('staffFields').append(el);staffInputs[name]=input;
+}
+async function staffRequest(url,options={}){
+ const response=await fetch(url,{...options,headers:{Authorization:'Bearer '+token,...options.headers},cache:'no-store'});
+ const data=await response.json();
+ if(!response.ok)throw Error(data.error||'Үйлдэл амжилтгүй');
+ return data;
+}
+async function loadStaff(){
+ if(!token)return;
+ try{
+  const result=await staffRequest('/api/staff');
+  $('staffStatus').textContent=result.employees.length+' ажилтан бүртгэлтэй (эхний 200).';
+  const table=document.createElement('table');
+  const head=document.createElement('thead');const hr=document.createElement('tr');
+  for(const name of ['Код','Овог','Нэр','Албан тушаал','Төлөв']){const th=document.createElement('th');th.textContent=name;hr.append(th);}
+  head.append(hr);table.append(head);
+  const body=document.createElement('tbody');
+  for(const employee of result.employees){const tr=document.createElement('tr');for(const key of ['employee_code','surname','given_name','job_title','status']){const td=document.createElement('td');td.textContent=employee[key]||'—';tr.append(td);}body.append(tr);}
+  table.append(body);$('staffList').replaceChildren(table);
+ }catch(err){$('staffStatus').textContent=err.message;}
+}
+$('findStaff').addEventListener('click',async()=>{
+ const code=$('staffCode').value.trim();
+ if(!/^[0-9]{6}$/.test(code)){$('staffFormStatus').textContent='6 оронтой код оруулна уу';return;}
+ editingStaffCode=null;$('staffForm').reset();
+ try{
+  const result=await staffRequest('/api/staff/'+encodeURIComponent(code));
+  editingStaffCode=code;
+  for(const [name,input] of Object.entries(staffInputs))input.value=result.employee[name]??'';
+  $('staffFormStatus').textContent='Бүртгэл олдлоо. Засварлаж хадгалж болно.';
+ }catch(err){$('staffFormStatus').textContent=err.message+' — шинэ бүртгэл үүсгэж болно (зөвхөн өөрийн салбарт).';}
+});
+$('staffForm').addEventListener('submit',async event=>{
+ event.preventDefault();
+ const code=$('staffCode').value.trim();
+ if(!/^[0-9]{6}$/.test(code)){$('staffFormStatus').textContent='6 оронтой код оруулна уу';return;}
+ const payload={};
+ for(const [name,input] of Object.entries(staffInputs))payload[name]=input.value.trim()||null;
+ try{
+  const isEdit=editingStaffCode===code;
+  if(!isEdit)payload.employee_code=code;
+  await staffRequest(isEdit?'/api/staff/'+code:'/api/staff',{method:isEdit?'PATCH':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+  editingStaffCode=code;$('staffFormStatus').textContent='Анкет хадгалагдлаа.';await loadStaff();
+ }catch(err){$('staffFormStatus').textContent=err.message;}
+});
