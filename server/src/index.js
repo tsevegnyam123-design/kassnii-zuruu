@@ -21,6 +21,7 @@ app.use(express.json({ limit: '16kb' }));
 app.use('/api', rateLimit({ windowMs: 15 * 60 * 1000, limit: 100, standardHeaders: 'draft-7', legacyHeaders: false }));
 const publicIndex = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../public/index.html');
 app.get('/', (_req,res) => res.sendFile(publicIndex));
+app.get('/login.js', (_req,res) => res.sendFile(path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../public/login.js')));
 app.get('/api/health', (_req,res) => res.json({ status: 'ok' }));
 // Initial login uses the Supabase Auth email/password configured for the admin.
 // Employee-code login is not enabled until a verified code-to-auth mapping exists.
