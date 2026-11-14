@@ -1,15 +1,8 @@
-let token=null;
-const $=id=>document.getElementById(id);
-$('loginForm').addEventListener('submit',async event=>{
-event.preventDefault();$('message').textContent='Нэвтэрч байна…';$('message').className='';$('submit').disabled=true;
-try{
-const response=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:$('email').value,password:$('password').value}),cache:'no-store'});
-const data=await response.json();if(!response.ok)throw Error(data.error||'Нэвтрэх боломжгүй');
-token=data.access_token;$('password').value='';
-const meResponse=await fetch('/api/me',{headers:{Authorization:'Bearer '+token},cache:'no-store'});const me=await meResponse.json();
-if(!meResponse.ok)throw Error(me.error||'Мэдээлэл ачаалж чадсангүй');
-$('account').textContent=(me.profile?.given_name||'Туршилтын хэрэглэгч')+' · Эрх: '+(me.role||'employee');
-$('admin').classList.toggle('hidden',me.role!=='hr_admin');$('loginView').classList.add('hidden');$('accountView').classList.remove('hidden');
-}catch(err){token=null;$('message').className='error';$('message').textContent=err.message||'Алдаа гарлаа';}finally{$('submit').disabled=false;}
-});
-$('logout').addEventListener('click',()=>{token=null;$('accountView').classList.add('hidden');$('loginView').classList.remove('hidden');$('message').textContent='Гарлаа';$('message').className='success';});
+let token=null;const $=id=>document.getElementById(id);
+const fields=[['Овог','surname'],['Нэр','given_name'],['Ажилтны код','employee_code'],['Албан тушаал','job_title'],['Салбарын код','branch_code'],['Ажилд орсон огноо','start_date','date'],['Ажилтны төлөв','status'],['Ажлын төрөл','employment_type'],['Утас','phone','tel'],['И-мэйл','contact_email','email'],['Онцгой үед холбогдох хүн','emergency_contact'],['Онцгой үед холбогдох утас','emergency_phone','tel'],['Хаяг','address'],['Боловсрол','education'],['Сургалтын төлөв','training_status'],['Тэмдэглэл','notes']];
+for(const [label,name,type] of fields){const el=document.createElement('label');el.textContent=label;const input=document.createElement('input');input.name=name;input.type=type||'text';input.autocomplete='off';input.maxLength=120;el.append(input);$('profileFields').append(el);}
+$('clearProfile').addEventListener('click',()=>{$('profileForm').reset();});
+document.querySelectorAll('[data-tab]').forEach(button=>button.addEventListener('click',()=>{const tab=button.dataset.tab;document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b===button));document.querySelectorAll('.section').forEach(s=>s.classList.toggle('active',s.id===tab));}));
+$('loginForm').addEventListener('submit',async event=>{event.preventDefault();$('message').textContent='Нэвтэрч байна…';$('message').className='message';$('submit').disabled=true;try{const response=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:$('email').value,password:$('password').value}),cache:'no-store'});const data=await response.json();if(!response.ok)throw Error(data.error||'Нэвтрэх боломжгүй');token=data.access_token;$('password').value='';const meResponse=await fetch('/api/me',{headers:{Authorization:'Bearer '+token},cache:'no-store'});const me=await meResponse.json();if(!meResponse.ok)throw Error(me.error||'Мэдээлэл ачаалж чадсангүй');const name=me.profile?.given_name||'Туршилтын хэрэглэгч';$('account').textContent=name+' · Эрх: '+(me.role||'employee');$('who').textContent=name;$('roleLabel').textContent=me.role==='hr_admin'?'HR админ':'Ажилтан';$('admin').hidden=me.role!=='hr_admin';$('loginView').classList.add('hidden');$('portal').classList.remove('hidden');}catch(err){token=null;$('message').className='message error';$('message').textContent=err.message||'Алдаа гарлаа';}finally{$('submit').disabled=false;}});
+$('logout').addEventListener('click',()=>{token=null;$('profileForm').reset();$('portal').classList.add('hidden');$('loginView').classList.remove('hidden');$('who').textContent='Туршилтын орчин';$('message').textContent='Гарлаа';$('message').className='message success';});
+$('branchSearch').addEventListener('input',()=>{$('branchResult').textContent='Салбарын баталгаатай жагсаалт холбогдоогүй тул хайлтын үр дүн байхгүй.';});
