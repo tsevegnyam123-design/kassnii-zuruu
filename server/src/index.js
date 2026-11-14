@@ -15,6 +15,7 @@ const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SER
 const allowedOrigins = process.env.ALLOWED_ORIGINS.split(',').map(s => s.trim()).filter(Boolean);
 const app = express();
 app.disable('x-powered-by');
+app.set('trust proxy', 1);
 app.use(helmet());
 app.use(cors({ origin(origin, cb) { if (!origin || allowedOrigins.includes(origin)) return cb(null, true); cb(null, false); }, credentials: false }));
 // Same-origin browser requests do not require CORS. Only explicitly allowed cross-origin sites receive CORS headers.
@@ -34,7 +35,7 @@ app.post('/api/recovery/request', recoveryLimit, async (req,res) => {
   if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return res.status(400).json({error:'И-мэйл хаягаа шалгана уу'});
   const redirectTo = 'https://gs25-employee-portal-git-feature-portal-ui-v2-gs-portal.vercel.app/reset-password';
   const {error} = await supabase.auth.resetPasswordForEmail(email,{redirectTo});
-  if(error) console.error('Recovery request failed:',error.code || error.status || 'unknown');
+  if(error) { console.error('Recovery request failed:',JSON.stringify({status:error.status,code:error.code,message:error.message})); return res.status(502).json({error:'Supabase сэргээх хүсэлтийг хүлээж авсангүй. Серверийн тохиргоог шалгах шаардлагатай.'}); }
   res.set('Cache-Control','no-store');
   res.json({message:'Хэрэв энэ и-мэйл бүртгэлтэй бол сэргээх холбоос илгээгдэнэ.'});
 });
