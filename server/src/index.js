@@ -45,4 +45,4 @@ app.get('/api/admin/status', authenticate, async (req,res) => {
 // Payroll and cash routes intentionally NOT exposed until private Sheets access,
 // verified employee-code mapping, auditing, and source endpoint lockdown are complete.
 app.use((err,_req,res,_next) => { console.error(err.message); res.status(500).json({error:'Server error'}); });
-app.listen(Number(process.env.PORT || 3001), () => console.log('GS25 API listening'));
+export default app;
