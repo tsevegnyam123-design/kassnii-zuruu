@@ -88,6 +88,34 @@ app.get('/api/admin/status', authenticate, async (req,res) => {
   res.set('Cache-Control','no-store');
   res.json({ admin: true });
 });
+
+// Employee profile endpoints: server verifies Supabase JWT and scopes every write to that user.
+app.get('/api/profile', authenticate, async (req,res) => {
+  const {data,error}=await supabase.from('employee_profiles').select('employee_code,given_name,surname,job_title,branch_id').eq('auth_user_id',req.user.id).maybeSingle();
+  res.set('Cache-Control','no-store');
+  if(error) return res.status(500).json({error:'Анкет уншиж чадсангүй'});
+  res.json({profile:data||null});
+});
+app.patch('/api/profile', authenticate, async (req,res) => {
+  const body=req.body;
+  if(!body || typeof body!=='object' || Array.isArray(body) || Object.keys(body).length===0 || Object.keys(body).some(k=>!['given_name','surname'].includes(k))) return res.status(400).json({error:'Зөвхөн өөрийн нэр, овгийг засах боломжтой'});
+  for(const value of Object.values(body)) if(typeof value!=='string'||!value.trim()||value.trim().length>100) return res.status(400).json({error:'Нэр, овог 1–100 тэмдэгт байх ёстой'});
+  const updates=Object.fromEntries(Object.entries(body).map(([k,v])=>[k,v.trim()]));
+  const {data,error}=await supabase.from('employee_profiles').update(updates).eq('auth_user_id',req.user.id).select('employee_code,given_name,surname,job_title,branch_id').maybeSingle();
+  res.set('Cache-Control','no-store');
+  if(error) return res.status(500).json({error:'Анкет хадгалж чадсангүй'});
+  if(!data) return res.status(404).json({error:'Таны Supabase анкет олдсонгүй'});
+  res.json({profile:data});
+});
+app.get('/api/admin/employees', authenticate, async (req,res) => {
+  const {data:role,error:roleError}=await supabase.from('portal_roles').select('role').eq('auth_user_id',req.user.id).maybeSingle();
+  if(roleError) return res.status(500).json({error:'Эрх шалгаж чадсангүй'});
+  if(role?.role!=='hr_admin') return res.status(403).json({error:'Зөвшөөрөлгүй'});
+  const {data,error}=await supabase.from('employee_profiles').select('employee_code,given_name,surname,job_title,branch_id').order('employee_code',{ascending:true}).limit(100);
+  res.set('Cache-Control','no-store');
+  if(error) return res.status(500).json({error:'Ажилтны жагсаалт уншиж чадсангүй'});
+  res.json({employees:data||[],limitedTo:100});
+});
 // Payroll and cash routes intentionally NOT exposed until private Sheets access,
 // verified employee-code mapping, auditing, and source endpoint lockdown are complete.
 app.use((err,_req,res,_next) => { console.error(err.message); res.status(500).json({error:'Server error'}); });
