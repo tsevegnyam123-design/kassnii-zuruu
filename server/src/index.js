@@ -1,3 +1,4 @@
+import { randomBytes, createHash } from 'node:crypto';
 import 'dotenv/config';
 import express from 'express';
 import path from 'node:path';
@@ -142,6 +143,75 @@ app.get('/api/admin/employees',authenticate,async(req,res)=>{
   res.set('Cache-Control','no-store');
   if(error)return res.status(500).json({error:'Ажилтны жагсаалт уншиж чадсангүй'});
   res.json({employees:data||[],limitedTo:100});
+});
+
+
+const inviteHash=token=>createHash('sha256').update(token).digest('hex');
+const inviteTokenValid=token=>typeof token==='string'&&/^[a-f0-9]{64}$/.test(token);
+const inviteAdminLimit=rateLimit({windowMs:15*60*1000,limit:20,standardHeaders:'draft-7',legacyHeaders:false});
+const invitePublicLimit=rateLimit({windowMs:15*60*1000,limit:15,standardHeaders:'draft-7',legacyHeaders:false});
+async function reviewScope(req,res,next){
+ try{const scope=await staffScope(req.user.id);if(!scope)return res.status(403).json({error:'Эрхгүй'});req.staffScope=scope;next();}
+ catch{return res.status(500).json({error:'Эрх шалгах үед алдаа гарлаа'});}
+}
+app.post('/api/invites',authenticate,reviewScope,inviteAdminLimit,async(req,res)=>{
+ const branchId=req.staffScope.branchId;
+ if(!branchId)return res.status(403).json({error:'Урилга үүсгэх салбар сонгогдоогүй'});
+ const token=randomBytes(32).toString('hex');
+ const expiresAt=new Date(Date.now()+24*60*60*1000).toISOString();
+ const {error}=await supabase.from('employee_invites').insert({token_hash:inviteHash(token),branch_id:branchId,created_by:req.user.id,expires_at:expiresAt});
+ res.set('Cache-Control','no-store');
+ if(error)return res.status(500).json({error:'Холбоос үүсгэж чадсангүй'});
+ // Build from the request host; only same-origin deployment URLs are accepted by this server.
+ const link=new URL('/employee-form?token='+token,req.protocol+'://'+req.get('host')).toString();
+ res.status(201).json({link,expires_at:expiresAt});
+});
+app.get('/employee-form',(_req,res)=>{res.set('Cache-Control','no-store');res.sendFile(path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../public/employee-form.html'));});
+app.get('/employee-form.js',(_req,res)=>{res.set('Cache-Control','no-store');res.sendFile(path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../public/employee-form.js'));});
+app.get('/api/invites/:token',invitePublicLimit,async(req,res)=>{
+ if(!inviteTokenValid(req.params.token))return res.status(404).json({error:'Холбоос хүчингүй'});
+ const {data,error}=await supabase.from('employee_invites').select('id,branch_id,expires_at,used_at,revoked_at').eq('token_hash',inviteHash(req.params.token)).maybeSingle();
+ res.set('Cache-Control','no-store');
+ if(error||!data||data.used_at||data.revoked_at||new Date(data.expires_at).getTime()<=Date.now())return res.status(410).json({error:'Холбоос хүчингүй эсвэл хугацаа дууссан'});
+ const {data:branch}=await supabase.from('branches').select('branch_code,branch_name').eq('id',data.branch_id).maybeSingle();
+ res.json({branch:branch?{code:branch.branch_code,name:branch.branch_name}:null,expires_at:data.expires_at});
+});
+app.post('/api/invites/:token/submit',invitePublicLimit,async(req,res)=>{
+ if(!inviteTokenValid(req.params.token))return res.status(404).json({error:'Холбоос хүчингүй'});
+ const values=normalizeStaffInput(req.body);
+ if(!values||!/^\d{6}$/.test(values.employee_code||'')||!values.surname||!values.given_name)return res.status(400).json({error:'6 оронтой код, овог, нэр заавал шаардлагатай'});
+ const {data:invite,error:lookupError}=await supabase.from('employee_invites').select('id,branch_id,expires_at,used_at,revoked_at').eq('token_hash',inviteHash(req.params.token)).maybeSingle();
+ if(lookupError||!invite||invite.used_at||invite.revoked_at||new Date(invite.expires_at).getTime()<=Date.now())return res.status(410).json({error:'Холбоос хүчингүй эсвэл хугацаа дууссан'});
+ // Claim once atomically before accepting a submission.
+ const {data:claimed,error:claimError}=await supabase.from('employee_invites').update({used_at:new Date().toISOString()}).eq('id',invite.id).is('used_at',null).is('revoked_at',null).gt('expires_at',new Date().toISOString()).select('id').maybeSingle();
+ if(claimError||!claimed)return res.status(409).json({error:'Холбоос аль хэдийн ашиглагдсан'});
+ const {error}=await supabase.from('employee_submissions').insert({invite_id:invite.id,branch_id:invite.branch_id,payload:values});
+ res.set('Cache-Control','no-store');
+ if(error){console.error('Submission save error',error.code);return res.status(500).json({error:'Анкет хүлээн авахад алдаа гарлаа. HR-д мэдэгдэнэ үү'});}
+ res.status(201).json({message:'Анкет HR админы шалгалтад очлоо'});
+});
+app.get('/api/submissions',authenticate,reviewScope,async(req,res)=>{
+ let q=supabase.from('employee_submissions').select('id,branch_id,payload,status,created_at').eq('status','pending').order('created_at',{ascending:false}).limit(100);
+ if(!req.staffScope.admin)q=q.eq('branch_id',req.staffScope.branchId);
+ const {data,error}=await q;
+ res.set('Cache-Control','no-store');
+ if(error)return res.status(500).json({error:'Ирсэн анкетуудыг уншиж чадсангүй'});
+ res.json({submissions:(data||[]).map(x=>({...x,payload:publicStaff(x.payload)}))});
+});
+app.post('/api/submissions/:id/review',authenticate,reviewScope,async(req,res)=>{
+ if(!/^[0-9a-f-]{36}$/i.test(req.params.id)||!['approved','rejected'].includes(req.body?.decision))return res.status(400).json({error:'Хүсэлт буруу'});
+ let q=supabase.from('employee_submissions').select('id,branch_id,payload,status').eq('id',req.params.id);
+ if(!req.staffScope.admin)q=q.eq('branch_id',req.staffScope.branchId);
+ const {data:submission,error}=await q.maybeSingle();
+ if(error||!submission)return res.status(404).json({error:'Анкет олдсонгүй'});
+ if(submission.status!=='pending')return res.status(409).json({error:'Анкет өмнө нь шийдвэрлэгдсэн'});
+ if(req.body.decision==='approved'){
+  const {error:saveError}=await supabase.from('employee_profiles').insert({...submission.payload,branch_id:submission.branch_id});
+  if(saveError)return res.status(409).json({error:saveError.code==='23505'?'Ажилтны код аль хэдийн бүртгэлтэй':'Анкет баталгаажуулж чадсангүй'});
+ }
+ const {error:updateError}=await supabase.from('employee_submissions').update({status:req.body.decision,reviewed_by:req.user.id,reviewed_at:new Date().toISOString()}).eq('id',submission.id).eq('status','pending');
+ if(updateError)return res.status(500).json({error:'Шийдвэрийг хадгалж чадсангүй'});
+ res.set('Cache-Control','no-store');res.json({status:req.body.decision});
 });
 
 const employeeFormFields=['surname','given_name','employee_code','job_title','start_date','status','employment_type','phone','contact_email','emergency_contact','emergency_phone','address','education','training_status','notes'];
