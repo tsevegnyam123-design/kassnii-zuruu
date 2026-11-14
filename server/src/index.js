@@ -31,7 +31,7 @@ app.get('/reset.js', (_req,res) => res.sendFile(path.resolve(path.dirname(fileUR
 const recoveryLimit = rateLimit({windowMs:15*60*1000,limit:5,standardHeaders:'draft-7',legacyHeaders:false});
 app.post('/api/recovery/request', recoveryLimit, async (req,res) => {
   const email = typeof req.body?.email === 'string' ? req.body.email.trim() : '';
-  if (email.length > 254 || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) return res.status(400).json({error:'И-мэйл хаягаа шалгана уу'});
+  if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return res.status(400).json({error:'И-мэйл хаягаа шалгана уу'});
   const redirectTo = 'https://gs25-employee-portal-git-feature-portal-ui-v2-gs-portal.vercel.app/reset-password';
   const {error} = await supabase.auth.resetPasswordForEmail(email,{redirectTo});
   if(error) console.error('Recovery request failed:',error.code || error.status || 'unknown');
