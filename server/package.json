@@ -4,8 +4,8 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "node --watch src/index.js",
-    "start": "node src/index.js"
+    "dev": "node --watch src/local.js",
+    "start": "node src/local.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.49.0",
