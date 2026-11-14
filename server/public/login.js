@@ -3,7 +3,7 @@ const fields=[['Овог','surname'],['Нэр','given_name'],['Ажилтны к
 for(const [label,name,type] of fields){const el=document.createElement('label');el.textContent=label;const input=document.createElement('input');input.name=name;input.type=type||'text';input.autocomplete='off';input.maxLength=300;input.disabled=true;el.append(input);$('profileFields').append(el);}
 $('clearProfile').addEventListener('click',()=>{$('profileForm').reset();});
 document.querySelectorAll('[data-tab]').forEach(button=>button.addEventListener('click',()=>{const tab=button.dataset.tab;document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b===button));document.querySelectorAll('.section').forEach(s=>s.classList.toggle('active',s.id===tab));}));
-$('loginForm').addEventListener('submit',async event=>{event.preventDefault();$('message').textContent='Нэвтэрч байна…';$('message').className='message';$('submit').disabled=true;try{const response=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:$('email').value,password:$('password').value}),cache:'no-store'});const data=await response.json();if(!response.ok)throw Error(data.error||'Нэвтрэх боломжгүй');token=data.access_token;$('password').value='';const meResponse=await fetch('/api/me',{headers:{Authorization:'Bearer '+token},cache:'no-store'});const me=await meResponse.json();if(!meResponse.ok)throw Error(me.error||'Мэдээлэл ачаалж чадсангүй');isAdmin=me.role==='hr_admin';const name=me.profile?.given_name||'Туршилтын хэрэглэгч';$('account').textContent=name+' · Эрх: '+(me.role||'employee');$('who').textContent=name;$('roleLabel').textContent=me.role==='hr_admin'?'HR админ':'Ажилтан';$('admin').hidden=me.role!=='hr_admin';$('loginView').classList.add('hidden');$('portal').classList.remove('hidden');await loadProfile();if(isAdmin)await loadEmployees();await loadStaff();}catch(err){token=null;$('message').className='message error';$('message').textContent=err.message||'Алдаа гарлаа';}finally{$('submit').disabled=false;}});
+$('loginForm').addEventListener('submit',async event=>{event.preventDefault();$('message').textContent='Нэвтэрч байна…';$('message').className='message';$('submit').disabled=true;try{const response=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:$('email').value,password:$('password').value}),cache:'no-store'});const data=await response.json();if(!response.ok)throw Error(data.error||'Нэвтрэх боломжгүй');token=data.access_token;$('password').value='';const meResponse=await fetch('/api/me',{headers:{Authorization:'Bearer '+token},cache:'no-store'});const me=await meResponse.json();if(!meResponse.ok)throw Error(me.error||'Мэдээлэл ачаалж чадсангүй');isAdmin=me.role==='hr_admin';const name=me.profile?.given_name||'Туршилтын хэрэглэгч';$('account').textContent=name+' · Эрх: '+(me.role||'employee');$('who').textContent=name;$('roleLabel').textContent=me.role==='hr_admin'?'HR админ':'Ажилтан';$('admin').hidden=me.role!=='hr_admin';$('loginView').classList.add('hidden');$('portal').classList.remove('hidden');await loadProfile();if(isAdmin)await loadEmployees();await loadStaff();await loadSubmissions();}catch(err){token=null;$('message').className='message error';$('message').textContent=err.message||'Алдаа гарлаа';}finally{$('submit').disabled=false;}});
 $('logout').addEventListener('click',()=>{token=null;isAdmin=false;$('profileForm').reset();$('saveProfile').disabled=true;$('hrEmployeeCard').classList.add('hidden');$('portal').classList.add('hidden');$('loginView').classList.remove('hidden');$('who').textContent='Туршилтын орчин';$('message').textContent='Гарлаа';$('message').className='message success';});
 $('branchSearch').addEventListener('input',()=>{$('branchResult').textContent='Салбарын баталгаатай жагсаалт холбогдоогүй тул хайлтын үр дүн байхгүй.';});
 
@@ -96,3 +96,40 @@ $('staffForm').addEventListener('submit',async event=>{
   editingStaffCode=code;$('staffFormStatus').textContent='Анкет хадгалагдлаа.';await loadStaff();
  }catch(err){$('staffFormStatus').textContent=err.message;}
 });
+
+$('createInvite').addEventListener('click',async()=>{
+ $('inviteStatus').textContent='Холбоос үүсгэж байна…';$('inviteLink').value='';
+ try{const data=await staffRequest('/api/invites',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});$('inviteLink').value=data.link;$('inviteStatus').textContent='24 цаг хүчинтэй холбоос үүслээ. Аюулгүй сувгаар илгээнэ үү.';}
+ catch(err){$('inviteStatus').textContent=err.message;}
+});
+$('copyInvite').addEventListener('click',async()=>{
+ if(!$('inviteLink').value)return;
+ try{await navigator.clipboard.writeText($('inviteLink').value);$('inviteStatus').textContent='Холбоос хуулагдлаа.';}
+ catch{$('inviteLink').select();$('inviteStatus').textContent='Холбоосыг сонгоод гараар хуулна уу.';}
+});
+async function loadSubmissions(){
+ if(!token)return;
+ try{
+  const result=await staffRequest('/api/submissions');
+  $('submissionStatus').textContent=result.submissions.length+' анкет шалгагдахаар хүлээж байна.';
+  $('submissions').replaceChildren();
+  for(const item of result.submissions){
+   const box=document.createElement('div');box.className='card';box.style.margin='10px 0';
+   const title=document.createElement('h3');title.textContent=(item.payload.employee_code||'')+' — '+(item.payload.surname||'')+' '+(item.payload.given_name||'');box.append(title);
+   for(const [label,key] of fields.filter(x=>x[1]!=='branch_code')){
+    const p=document.createElement('p');p.textContent=label+': '+(item.payload[key]||'—');box.append(p);
+   }
+   for(const [decision,label] of [['approved','Батлах'],['rejected','Татгалзах']]){
+    const button=document.createElement('button');button.type='button';button.className=decision==='approved'?'primary':'ghost';button.textContent=label;button.style.marginRight='8px';
+    button.addEventListener('click',async()=>{
+     if(!confirm('Энэ анкетыг '+label.toLowerCase()+' уу?'))return;
+     button.disabled=true;
+     try{await staffRequest('/api/submissions/'+item.id+'/review',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({decision})});await loadSubmissions();await loadStaff();}
+     catch(err){$('submissionStatus').textContent=err.message;button.disabled=false;}
+    });box.append(button);
+   }
+   $('submissions').append(box);
+  }
+ }catch(err){$('submissionStatus').textContent=err.message;}
+}
+$('refreshSubmissions').addEventListener('click',loadSubmissions);
