@@ -151,7 +151,11 @@ const employeeSelect=employeeColumns.join(',');
 async function staffScope(userId){
  const {data:role,error:roleError}=await supabase.from('portal_roles').select('role').eq('auth_user_id',userId).maybeSingle();
  if(roleError)throw roleError;
- if(role?.role==='hr_admin')return {admin:true};
+ if(role?.role==='hr_admin'){
+  const {data:assignment,error}=await supabase.from('manager_branches').select('branch_id').eq('auth_user_id',userId).maybeSingle();
+  if(error)throw error;
+  return {admin:true,branchId:assignment?.branch_id||null};
+ }
  if(role?.role!=='manager')return null;
  const {data:assignment,error}=await supabase.from('manager_branches').select('branch_id').eq('auth_user_id',userId).maybeSingle();
  if(error)throw error;
@@ -202,7 +206,7 @@ app.post('/api/staff',authenticate,staffGuard,async(req,res)=>{
  if(!values||!/^\d{6}$/.test(values.employee_code||'')||!values.surname||!values.given_name)return res.status(400).json({error:'6 оронтой код, овог, нэр заавал шаардлагатай'});
  // Managers may only create records assigned to their verified branch.
  // HR must select a branch separately before using this endpoint.
- if(req.staffScope.admin)return res.status(403).json({error:'HR админ салбар сонгох тохиргоо хараахан хийгдээгүй'});
+ if(!req.staffScope.branchId)return res.status(403).json({error:'Анкет үүсгэх салбар холбогдоогүй'});
  const {data,error}=await supabase.from('employee_profiles').insert({...values,branch_id:req.staffScope.branchId}).select(employeeSelect).single();
  res.set('Cache-Control','no-store');
  if(error){if(error.code==='23505')return res.status(409).json({error:'Энэ ажилтны код аль хэдийн бүртгэлтэй'});return res.status(400).json({error:'Анкет хадгалж чадсангүй. Бүртгэлийн шаардлагыг шалгана уу'});}
