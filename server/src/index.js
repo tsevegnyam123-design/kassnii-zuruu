@@ -89,31 +89,58 @@ app.get('/api/admin/status', authenticate, async (req,res) => {
   res.json({ admin: true });
 });
 
-// Employee profile endpoints: server verifies Supabase JWT and scopes every write to that user.
-app.get('/api/profile', authenticate, async (req,res) => {
-  const {data,error}=await supabase.from('employee_profiles').select('employee_code,given_name,surname,job_title,branch_id').eq('auth_user_id',req.user.id).maybeSingle();
+// Profile fields are explicitly allowlisted. Never accept auth_user_id or role from clients.
+const profileFields=['surname','given_name','employee_code','job_title','branch_code','start_date','status','employment_type','phone','contact_email','emergency_contact','emergency_phone','address','education','training_status','notes'];
+const profileSelect=profileFields.join(',');
+async function isHrAdmin(userId) {
+  const {data,error}=await supabase.from('portal_roles').select('role').eq('auth_user_id',userId).maybeSingle();
+  if(error) throw error;
+  return data?.role==='hr_admin';
+}
+function validateProfile(body) {
+  if(!body||typeof body!=='object'||Array.isArray(body)||Object.keys(body).some(k=>!profileFields.includes(k))) return null;
+  const clean={};
+  for(const key of profileFields) {
+    const value=body[key];
+    if(value===undefined) continue;
+    if(value!==null && typeof value!=='string') return null;
+    const v=typeof value==='string'?value.trim():'';
+    if(v.length>300 || (key==='start_date' && v && !/^\\d{4}-\\d{2}-\\d{2}$/.test(v))) return null;
+    clean[key]=v||null;
+  }
+  return clean;
+}
+app.get('/api/profile',authenticate,async(req,res)=>{
+  const {data,error}=await supabase.from('employee_profiles').select(profileSelect).eq('auth_user_id',req.user.id).maybeSingle();
   res.set('Cache-Control','no-store');
-  if(error) return res.status(500).json({error:'Анкет уншиж чадсангүй'});
+  if(error)return res.status(500).json({error:'Анкет уншиж чадсангүй'});
   res.json({profile:data||null});
 });
-app.patch('/api/profile', authenticate, async (req,res) => {
-  const body=req.body;
-  if(!body || typeof body!=='object' || Array.isArray(body) || Object.keys(body).length===0 || Object.keys(body).some(k=>!['given_name','surname'].includes(k))) return res.status(400).json({error:'Зөвхөн өөрийн нэр, овгийг засах боломжтой'});
-  for(const value of Object.values(body)) if(typeof value!=='string'||!value.trim()||value.trim().length>100) return res.status(400).json({error:'Нэр, овог 1–100 тэмдэгт байх ёстой'});
-  const updates=Object.fromEntries(Object.entries(body).map(([k,v])=>[k,v.trim()]));
-  const {data,error}=await supabase.from('employee_profiles').update(updates).eq('auth_user_id',req.user.id).select('employee_code,given_name,surname,job_title,branch_id').maybeSingle();
+app.put('/api/profile',authenticate,async(req,res)=>{
+  const clean=validateProfile(req.body);
+  if(!clean || Object.keys(clean).length===0)return res.status(400).json({error:'Анкетын талбаруудыг шалгана уу'});
+  let admin;
+  try{admin=await isHrAdmin(req.user.id);}catch{return res.status(500).json({error:'Эрх шалгаж чадсангүй'});}
+  const {data:existing,error:readError}=await supabase.from('employee_profiles').select('auth_user_id').eq('auth_user_id',req.user.id).maybeSingle();
+  if(readError)return res.status(500).json({error:'Анкет шалгаж чадсангүй'});
+  // Employment identity and assignments are controlled by HR only.
+  const hrFields=['employee_code','job_title','branch_code','start_date','status','employment_type','training_status'];
+  if(!admin && Object.keys(clean).some(k=>hrFields.includes(k)))return res.status(403).json({error:'Эдгээр ажлын талбарыг зөвхөн HR админ засна'});
+  if(!existing && !admin)return res.status(403).json({error:'Анхны анкетыг HR админ баталгаажуулах шаардлагатай'});
+  if(!existing && (!clean.employee_code || !clean.given_name || !clean.surname))return res.status(400).json({error:'Шинэ анкетад код, овог, нэр шаардлагатай'});
+  const query=existing
+    ? supabase.from('employee_profiles').update(clean).eq('auth_user_id',req.user.id)
+    : supabase.from('employee_profiles').insert({...clean,auth_user_id:req.user.id});
+  const {data,error}=await query.select(profileSelect).single();
   res.set('Cache-Control','no-store');
-  if(error) return res.status(500).json({error:'Анкет хадгалж чадсангүй'});
-  if(!data) return res.status(404).json({error:'Таны Supabase анкет олдсонгүй'});
+  if(error){console.error('Profile save failed:',error.code||'unknown');return res.status(400).json({error:'Анкет хадгалж чадсангүй. Хүснэгтийн бүтэц болон давхардсан кодыг шалгана уу'});}
   res.json({profile:data});
 });
-app.get('/api/admin/employees', authenticate, async (req,res) => {
-  const {data:role,error:roleError}=await supabase.from('portal_roles').select('role').eq('auth_user_id',req.user.id).maybeSingle();
-  if(roleError) return res.status(500).json({error:'Эрх шалгаж чадсангүй'});
-  if(role?.role!=='hr_admin') return res.status(403).json({error:'Зөвшөөрөлгүй'});
+app.get('/api/admin/employees',authenticate,async(req,res)=>{
+  try{if(!await isHrAdmin(req.user.id))return res.status(403).json({error:'Зөвшөөрөлгүй'});}catch{return res.status(500).json({error:'Эрх шалгаж чадсангүй'});}
   const {data,error}=await supabase.from('employee_profiles').select('employee_code,given_name,surname,job_title,branch_id').order('employee_code',{ascending:true}).limit(100);
   res.set('Cache-Control','no-store');
-  if(error) return res.status(500).json({error:'Ажилтны жагсаалт уншиж чадсангүй'});
+  if(error)return res.status(500).json({error:'Ажилтны жагсаалт уншиж чадсангүй'});
   res.json({employees:data||[],limitedTo:100});
 });
 // Payroll and cash routes intentionally NOT exposed until private Sheets access,
