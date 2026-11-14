@@ -18,7 +18,7 @@ app.disable('x-powered-by');
 app.use(helmet());
 app.use(cors({ origin(origin, cb) { if (!origin || allowedOrigins.includes(origin)) return cb(null, true); cb(null, false); }, credentials: false }));
 // Same-origin browser requests do not require CORS. Only explicitly allowed cross-origin sites receive CORS headers.
-app.use((req,res,next) => { const origin=req.get('origin'); if (origin && origin !== `${req.protocol}://${req.get('host')}` && !allowedOrigins.includes(origin)) return res.status(403).json({error:'Origin not allowed'}); next(); });
+app.use((req,res,next) => { const origin=req.get('origin'); if (origin && new URL(origin).host !== req.get('host') && !allowedOrigins.includes(origin)) return res.status(403).json({error:'Origin not allowed'}); next(); });
 app.use(express.json({ limit: '16kb' }));
 app.use('/api', rateLimit({ windowMs: 15 * 60 * 1000, limit: 100, standardHeaders: 'draft-7', legacyHeaders: false }));
 const publicIndex = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../public/index.html');
