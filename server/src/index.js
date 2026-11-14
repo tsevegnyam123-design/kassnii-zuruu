@@ -143,6 +143,84 @@ app.get('/api/admin/employees',authenticate,async(req,res)=>{
   if(error)return res.status(500).json({error:'Ажилтны жагсаалт уншиж чадсангүй'});
   res.json({employees:data||[],limitedTo:100});
 });
+
+const employeeFormFields=['surname','given_name','employee_code','job_title','start_date','status','employment_type','phone','contact_email','emergency_contact','emergency_phone','address','education','training_status','notes'];
+const dbFieldMap={contact_email:'email',emergency_contact:'emergency_contact_name',emergency_phone:'emergency_contact_phone',address:'address_text'};
+const employeeColumns=['employee_code','surname','given_name','job_title','branch_id','start_date','status','employment_type','phone','email','emergency_contact_name','emergency_contact_phone','address_text','education','training_status','notes'];
+const employeeSelect=employeeColumns.join(',');
+async function staffScope(userId){
+ const {data:role,error:roleError}=await supabase.from('portal_roles').select('role').eq('auth_user_id',userId).maybeSingle();
+ if(roleError)throw roleError;
+ if(role?.role==='hr_admin')return {admin:true};
+ if(role?.role!=='manager')return null;
+ const {data:assignment,error}=await supabase.from('manager_branches').select('branch_id').eq('auth_user_id',userId).maybeSingle();
+ if(error)throw error;
+ return assignment?.branch_id?{admin:false,branchId:assignment.branch_id}:null;
+}
+async function staffGuard(req,res,next){
+ try{const scope=await staffScope(req.user.id);if(!scope)return res.status(403).json({error:'Менежерийн салбарын эрх тохируулагдаагүй'});req.staffScope=scope;next();}
+ catch{return res.status(500).json({error:'Эрх шалгах үед алдаа гарлаа'});}
+}
+function normalizeStaffInput(body){
+ if(!body||typeof body!=='object'||Array.isArray(body)||Object.keys(body).some(k=>!employeeFormFields.includes(k)))return null;
+ const values={};
+ for(const [key,val] of Object.entries(body)){
+  if(val!==null&&typeof val!=='string')return null;
+  const value=typeof val==='string'?val.trim():'';
+  if(value.length>300)return null;
+  if(key==='start_date'&&value&&!/^\d{4}-\d{2}-\d{2}$/.test(value))return null;
+  values[dbFieldMap[key]||key]=value||null;
+ }
+ return values;
+}
+function publicStaff(row){
+ if(!row)return null;
+ const result={...row};
+ for(const [ui,db] of Object.entries(dbFieldMap)){result[ui]=result[db];delete result[db];}
+ return result;
+}
+app.get('/api/staff',authenticate,staffGuard,async(req,res)=>{
+ let query=supabase.from('employee_profiles').select('employee_code,surname,given_name,job_title,branch_id,status').order('employee_code').limit(200);
+ if(!req.staffScope.admin)query=query.eq('branch_id',req.staffScope.branchId);
+ const {data,error}=await query;
+ res.set('Cache-Control','no-store');
+ if(error)return res.status(500).json({error:'Ажилтны жагсаалт уншиж чадсангүй'});
+ res.json({employees:data||[]});
+});
+app.get('/api/staff/:code',authenticate,staffGuard,async(req,res)=>{
+ if(!/^\d{6}$/.test(req.params.code))return res.status(400).json({error:'6 оронтой код оруулна уу'});
+ let query=supabase.from('employee_profiles').select(employeeSelect).eq('employee_code',req.params.code);
+ if(!req.staffScope.admin)query=query.eq('branch_id',req.staffScope.branchId);
+ const {data,error}=await query.maybeSingle();
+ res.set('Cache-Control','no-store');
+ if(error)return res.status(500).json({error:'Анкет уншиж чадсангүй'});
+ if(!data)return res.status(404).json({error:'Ажилтан олдсонгүй'});
+ res.json({employee:publicStaff(data)});
+});
+app.post('/api/staff',authenticate,staffGuard,async(req,res)=>{
+ const values=normalizeStaffInput(req.body);
+ if(!values||!/^\d{6}$/.test(values.employee_code||'')||!values.surname||!values.given_name)return res.status(400).json({error:'6 оронтой код, овог, нэр заавал шаардлагатай'});
+ // Managers may only create records assigned to their verified branch.
+ // HR must select a branch separately before using this endpoint.
+ if(req.staffScope.admin)return res.status(403).json({error:'HR админ салбар сонгох тохиргоо хараахан хийгдээгүй'});
+ const {data,error}=await supabase.from('employee_profiles').insert({...values,branch_id:req.staffScope.branchId}).select(employeeSelect).single();
+ res.set('Cache-Control','no-store');
+ if(error){if(error.code==='23505')return res.status(409).json({error:'Энэ ажилтны код аль хэдийн бүртгэлтэй'});return res.status(400).json({error:'Анкет хадгалж чадсангүй. Бүртгэлийн шаардлагыг шалгана уу'});}
+ res.status(201).json({employee:publicStaff(data)});
+});
+app.patch('/api/staff/:code',authenticate,staffGuard,async(req,res)=>{
+ if(!/^\d{6}$/.test(req.params.code))return res.status(400).json({error:'Ажилтны код буруу'});
+ const values=normalizeStaffInput(req.body);
+ if(!values||!Object.keys(values).length||'employee_code' in values)return res.status(400).json({error:'Засах талбаруудыг шалгана уу'});
+ let query=supabase.from('employee_profiles').update(values).eq('employee_code',req.params.code);
+ if(!req.staffScope.admin)query=query.eq('branch_id',req.staffScope.branchId);
+ const {data,error}=await query.select(employeeSelect).maybeSingle();
+ res.set('Cache-Control','no-store');
+ if(error)return res.status(400).json({error:'Анкет шинэчилж чадсангүй'});
+ if(!data)return res.status(404).json({error:'Ажилтан олдсонгүй эсвэл эрх хүрэхгүй байна'});
+ res.json({employee:publicStaff(data)});
+});
+
 // Payroll and cash routes intentionally NOT exposed until private Sheets access,
 // verified employee-code mapping, auditing, and source endpoint lockdown are complete.
 app.use((err,_req,res,_next) => { console.error(err.message); res.status(500).json({error:'Server error'}); });
