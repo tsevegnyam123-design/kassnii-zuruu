@@ -296,7 +296,7 @@ function publicStaff(row){
  return result;
 }
 app.get('/api/staff',authenticate,staffGuard,async(req,res)=>{
- let query=supabase.from('employee_profiles').select('employee_code,surname,given_name,job_title,branch_id,status').order('employee_code').limit(200);
+ let query=supabase.from('employee_profiles').select('id,employee_code,surname,given_name,job_title,branch_id,status').order('employee_code').limit(200);
  if(!req.staffScope.admin)query=query.eq('branch_id',req.staffScope.branchId);
  const {data,error}=await query;
  res.set('Cache-Control','no-store');
