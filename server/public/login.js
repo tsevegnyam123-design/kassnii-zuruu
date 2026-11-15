@@ -1,5 +1,5 @@
 let token=null;let isAdmin=false;const $=id=>document.getElementById(id);
-const fields=[['Овог','surname'],['Нэр','given_name'],['Ажилтны код','employee_code'],['Албан тушаал','job_title'],['Салбарын код','branch_code'],['Ажилд орсон огноо','start_date','date'],['Ажилтны төлөв','status'],['Ажлын төрөл','employment_type'],['Утас','phone','tel'],['И-мэйл','contact_email','email'],['Онцгой үед холбогдох хүн','emergency_contact'],['Онцгой үед холбогдох утас','emergency_phone','tel'],['Хаяг','address'],['Боловсрол','education'],['Сургалтын төлөв','training_status'],['Тэмдэглэл','notes']];
+const fields=[['Овог','surname'],['Нэр','given_name'],['Ажилтны код','employee_code'],['Албан тушаал','job_title'],['Цалингийн ангилал (BM / SL / Staff)','salary_role'],['Level (1–4)','salary_level'],['Салбарын код','branch_code'],['Ажилд орсон огноо','start_date','date'],['Ажилтны төлөв','status'],['Ажлын төрөл','employment_type'],['Утас','phone','tel'],['И-мэйл','contact_email','email'],['Онцгой үед холбогдох хүн','emergency_contact'],['Онцгой үед холбогдох утас','emergency_phone','tel'],['Хаяг','address'],['Боловсрол','education'],['Сургалтын төлөв','training_status'],['Тэмдэглэл','notes']];
 for(const [label,name,type] of fields){const el=document.createElement('label');el.textContent=label;const input=document.createElement('input');input.name=name;input.type=type||'text';input.autocomplete='off';input.maxLength=300;input.disabled=true;el.append(input);$('profileFields').append(el);}
 $('clearProfile').addEventListener('click',()=>{$('profileForm').reset();});
 document.querySelectorAll('[data-tab]').forEach(button=>button.addEventListener('click',()=>{const tab=button.dataset.tab;document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b===button));document.querySelectorAll('.section').forEach(s=>s.classList.toggle('active',s.id===tab));}));
@@ -145,6 +145,8 @@ function renderFinancialTable(container,columns,records){
 }
 async function loadFinancials(){
  if(!token)return;
+ $('accountCard').classList.toggle('hidden',!isAdmin);
+ if(!isAdmin){$('salaryCard').classList.add('hidden');$('hoursCard').classList.add('hidden');return;}
  $('salaryCard').classList.toggle('hidden',!isAdmin);$('hoursCard').classList.toggle('hidden',!isAdmin);
  try{
   const staff=await staffRequest('/api/staff');
@@ -174,15 +176,21 @@ function updateWorkLevels(){
  const select=$('hoursLevel');select.replaceChildren();
  for(const level of workLevels[$('hoursRole').value]){const opt=document.createElement('option');opt.value=String(level);opt.textContent='Level '+level;select.append(opt);}
 }
-$('hoursRole').addEventListener('change',updateWorkLevels);updateWorkLevels();
+
 $('hoursForm').addEventListener('submit',async event=>{
  event.preventDefault();
  const data=Object.fromEntries(new FormData(event.target));
- for(const key of ['level_number','monthly_norm','worked_days','day_hours','night_hours','advance','tax_relief'])data[key]=Number(data[key]);
+ for(const key of ['worked_days','day_hours','night_hours','advance','tax_relief'])data[key]=Number(data[key]);
  $('hoursStatus').textContent='Тооцож байна…';
  try{
   const result=await staffRequest('/api/work-hours',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
   $('hoursStatus').textContent='Хадгалагдлаа. Тооцоолсон гар дээр авах: '+result.calculation.net.toLocaleString('mn-MN')+'₮; урьдчилгаа хассаны дараа: '+result.calculation.transfer.toLocaleString('mn-MN')+'₮';
   await loadFinancials();
  }catch(err){$('hoursStatus').textContent=err.message;}
+});
+
+$('accountForm').addEventListener('submit',async event=>{
+ event.preventDefault();$('accountStatus').textContent='Нэвтрэх эрх үүсгэж байна…';
+ try{const data=Object.fromEntries(new FormData(event.target));await staffRequest('/api/employee-accounts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});$('accountStatus').textContent='Ажилтны ID-д нэвтрэх эрх үүслээ.';event.target.reset();}
+ catch(err){$('accountStatus').textContent=err.message;}
 });
