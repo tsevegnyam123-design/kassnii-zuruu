@@ -258,6 +258,12 @@ app.post('/api/cash-variances',authenticate,staffGuard,async(req,res)=>{
 });
 
 
+function salaryPeriodNorm(period){
+ const [year,month]=period.split('-').map(Number);
+ const start=Date.UTC(year,month-2,26),end=Date.UTC(year,month-1,25);
+ let weekdays=0;for(let t=start;t<=end;t+=86400000){const day=new Date(t).getUTCDay();if(day!==0&&day!==6)weekdays++;}
+ return weekdays*8;
+}
 const salaryRules={
  BM:{base:1750000,levels:{1:0,2:100000,3:350000,4:600000}},
  SL:{base:1300000,levels:{2:100000,3:200000,4:300000}},
@@ -283,7 +289,7 @@ app.post('/api/work-hours',authenticate,payrollAdmin,async(req,res)=>{
  if(!uuidPattern.test(b.employee_id||'')||typeof b.period!=='string'||!/^\\d{4}-(0[1-9]|1[0-2])$/.test(b.period))return res.status(400).json({error:'Ажилтан эсвэл сар буруу'});
  const {data:grade,error:gradeError}=await supabase.from('employee_profiles').select('salary_role,salary_level').eq('id',b.employee_id).maybeSingle();
  if(gradeError||!grade?.salary_role||!grade.salary_level)return res.status(400).json({error:'Ажилтны албан тушаал болон Level-ийг бүртгэлд тохируулна уу'});
- b.role_code=grade.salary_role;b.level_number=grade.salary_level;
+ b.role_code=grade.salary_role;b.level_number=grade.salary_level;b.monthly_norm=salaryPeriodNorm(b.period);
  let calculation;
  try{calculation=calculateSalary(b);}catch(e){return res.status(400).json({error:e.message});}
  const {data:employee,error:employeeError}=await supabase.from('employee_profiles').select('id,branch_id,salary_role,salary_level').eq('id',b.employee_id).maybeSingle();
