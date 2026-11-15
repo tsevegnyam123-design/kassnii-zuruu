@@ -153,7 +153,7 @@ thead th{background:#eef4fb;color:#2b466b;position:sticky;top:0;z-index:1}
 
     <section id="employeePanel" hidden>
       <div class="summary-grid" id="employeeMetrics"></div>
-      <div class="card"><h2>Миний цалин — урьдчилсан тооцоо</h2><p class="hint">Зөвхөн менежерийн баталсан ээлж орно. SOP, KPI, нэмэлт суутгал болон бодит цалингийн хуудсаар тохируулагдах дүн ороогүй.</p><div id="salary"></div></div>
+      <div class="card"><h2>Миний цалин — урьдчилсан тооцоо</h2><p class="hint">Өмнөх сарын 26-наас энэ сарын 25-ны батлагдсан ээлжээр бодно. SOP, KPI, бусад суутгал болон бодит цалингийн хуудсаар тохируулагдах дүн ороогүй.</p><div id="salary"></div></div>
       <div class="card"><h2>Миний ажилласан ээлж</h2><div id="employeeShifts"></div></div>
       <div class="card"><h2>Миний кассын зөрүү</h2><div id="employeeCash"></div></div>
     </section>
@@ -252,7 +252,7 @@ function salaryCalc(employee){
   return {morning,day,night,workedDays,advanceWorkedDays,finalWorkedDays,dayHours,nightHours,normHours,base,dayPay,nightPay,food,travel,levelPay,gross,social,tax,net,transfer};
 }
 function resultTable(headers,rows){
-  if(!rows.length)return '<p class="muted">Энэ сард бүртгэл алга.</p>';
+  if(!rows.length)return '<p class="muted">Энэ цалингийн хугацаанд бүртгэл алга.</p>';
   return '<div class="scroll"><table><thead><tr>'+headers.map(h=>'<th>'+escapeHtml(h)+'</th>').join("")+'</tr></thead><tbody>'+
     rows.map(cells=>'<tr>'+cells.map(c=>'<td>'+escapeHtml(c)+'</td>').join("")+'</tr>').join("")+'</tbody></table></div>';
 }
@@ -311,9 +311,12 @@ function staffSummary(){
   const rows=(state.data.staff||[]).map(s=>{
     const calc=salaryCalc(s);
     return [s.employee_code,s.display_name,s.salary_role+" · L"+s.level,
+      calc?calc.advanceWorkedDays+" өдөр":"0",
+      calc?calc.finalWorkedDays+" өдөр":"0",
       calc?calc.workedDays+" өдөр":"0",calc?money(calc.transfer):"Тооцоогүй"];
   });
-  $("staffSummary").innerHTML=resultTable(["Код","Нэр","Албан тушаал","Батлагдсан өдөр","Урьдчилсан үлдэгдэл"],rows);
+  $("staffSummary").innerHTML=resultTable(
+    ["Код","Нэр","Албан тушаал","Урьдчилгаа ээлж","Сүүл ээлж","Нийт батлагдсан","Урьдчилсан үлдэгдэл"],rows);
 }
 function showCash(id,entries,isManager){
   const rows=entries.map(x=>[
@@ -332,13 +335,21 @@ function receiptRow(label,value,total=false){
 }
 function renderEmployee(){
   const user=state.data.user,calc=salaryCalc(user),cash=state.data.cash||[];
+  const p=state.data.period;
   const cashTotal=cash.reduce((n,x)=>n+Number(x.amount_mnt),0);
   $("employeeMetrics").innerHTML=metric("Батлагдсан ээлж",calc?calc.workedDays+" өдөр":"0 өдөр")+
+    metric("Урьдчилгаа хугацааны ээлж",calc?calc.advanceWorkedDays+" өдөр":"0 өдөр")+
+    metric("Сүүл цалингийн ээлж",calc?calc.finalWorkedDays+" өдөр":"0 өдөр")+
     metric("Цалингийн урьдчилсан үлдэгдэл",calc?money(calc.transfer):"Тооцоогүй")+
-    metric("Сарын кассын зөрүү",money(cashTotal));
-  $("salary").innerHTML=!calc?'<p class="muted">Энэ сард менежерийн баталсан ээлж байхгүй байна.</p>':
+    metric("Цалингийн хугацааны кассын зөрүү",money(cashTotal));
+  $("salary").innerHTML=!calc?'<p class="muted">Энэ цалингийн хугацаанд менежерийн баталсан ээлж байхгүй байна.</p>':
     '<div class="receipt">'+
+    receiptRow("Цалин бодох хугацаа",longDate(p.from)+" – "+longDate(p.to))+
+    receiptRow("Урьдчилгаа бодох хугацааны ээлж",calc.advanceWorkedDays+" өдөр ("+shortDate(p.advanceFrom)+"–"+shortDate(p.advanceTo)+")")+
+    receiptRow("Сүүл цалин бодох хугацааны ээлж",calc.finalWorkedDays+" өдөр ("+shortDate(p.finalFrom)+"–"+shortDate(p.finalTo)+")")+
     receiptRow("Өглөө / Өдөр / Шөнийн ээлж",calc.morning+" / "+calc.day+" / "+calc.night)+
+    receiptRow("Фонт хоног",p.fundDays!==null?p.fundDays+" хоног":"Тодорхойлоогүй")+
+    receiptRow("Норм цаг",calc.normHours+" цаг")+
     receiptRow("Өдрийн цаг",calc.dayHours.toFixed(2)+" цаг")+
     receiptRow("Шөнийн цаг",calc.nightHours.toFixed(2)+" цаг")+
     receiptRow("Үндсэн цалин",money(calc.base))+
@@ -352,10 +363,13 @@ function renderEmployee(){
     receiptRow("ХХОАТ (урьдчилсан)",money(calc.tax))+
     receiptRow("Авсан урьдчилгаа",money(user.advance_mnt))+
     receiptRow("Үлдэх олголт (урьдчилсан)",money(calc.transfer),true)+'</div>';
-  const shifts=(state.data.shifts||[]).map(s=>[s.work_date,
+  const shifts=(state.data.shifts||[]).map(s=>[
+    s.work_date,
+    s.work_date<=p.advanceTo?"Урьдчилгаа":"Сүүл цалин",
     {morning:"Өглөөний 07:45–16:30",day:"Өдрийн 15:15–00:15",night:"Шөнийн 23:45–08:45"}[s.shift_kind],
-    s.approved?"Батлагдсан":"Батлаагүй"]);
-  $("employeeShifts").innerHTML=resultTable(["Огноо","Ээлж","Төлөв"],shifts);
+    s.approved?"Батлагдсан":"Батлаагүй"
+  ]);
+  $("employeeShifts").innerHTML=resultTable(["Огноо","Хэсэг","Ээлж","Төлөв"],shifts);
   showCash("employeeCash",cash,false);
 }
 function render(){
@@ -364,6 +378,7 @@ function render(){
   $("who").textContent=user.display_name+" · "+user.employee_code;
   $("welcome").textContent=user.access_role==="manager"?"Менежерийн dashboard":"Сайн байна уу, "+user.display_name;
   $("subhead").textContent=user.branch_code+" · "+(user.access_role==="manager"?"Салбарын менежер":"Ажилтан");
+  periodDetails();
   $("managerPanel").hidden=user.access_role!=="manager";
   $("employeePanel").hidden=user.access_role==="manager";
   if(user.access_role==="manager")renderManager();else renderEmployee();
