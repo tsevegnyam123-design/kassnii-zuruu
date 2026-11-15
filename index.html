@@ -1,1268 +1,368 @@
 <!DOCTYPE html>
 <html lang="mn">
 <head>
-<meta charset="UTF-8">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>GS25 · Ажилтны портал</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
-
 <style>
-  :root {
-    --gs-yellow: #02D5EA;
-    --gs-yellow-deep: #00B7CC;
-    --gs-navy: #007CFE;
-    --gs-navy-2: #007CFE12;
-    --gs-blue: #007CFE;
-    --bg: #F2F5FC;
-    --card: #FFFFFF;
-    --border: #DCE4F5;
-    --text: #10173A;
-    --muted: #5C6790;
-    --success: #17864F;
-    --success-bg: #E9F7EF;
-    --danger: #D8392C;
-    --danger-bg: #FDECEA;
-    --alert-bg: #E8F0FF;
-    --alert-border: #B9D0FA;
-    --shadow: 0 10px 30px -12px rgba(18, 58, 140, 0.20);
-  }
-
-  body.dark {
-    --bg: #0A0F22;
-    --card: #101836;
-    --border: #223061;
-    --text: #EAEEFC;
-    --muted: #8C97C4;
-    --success: #4ADE95;
-    --success-bg: #10261C;
-    --danger: #FF7A6E;
-    --danger-bg: #2B1512;
-    --alert-bg: #14204A;
-    --alert-border: #29418C;
-    --shadow: 0 10px 30px -12px rgba(0, 0, 0, 0.55);
-  }
-
-  * { box-sizing: border-box; }
-
-  body {
-    margin: 0;
-    min-height: 100vh;
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'Manrope', -apple-system, 'Segoe UI', sans-serif;
-    transition: background .25s ease, color .25s ease;
-  }
-
-  .shell {
-    max-width: 460px;
-    margin: 0 auto;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-  }
-
-  /* ---------- Header ---------- */
-
-  .brandbar {
-    background: var(--gs-navy);
-    color: #fff;
-    padding: 22px 20px 26px;
-    position: relative;
-    overflow: hidden;
-  }
-
-  .brandbar::after {
-    content: "";
-    position: absolute;
-    left: 0; right: 0; bottom: 0;
-    height: 6px;
-    background: var(--gs-yellow);
-  }
-
-  .brand-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-
-  .wordmark {
-    display: flex;
-    align-items: baseline;
-    gap: 3px;
-  }
-
-  .wordmark .mark {
-    background: var(--gs-yellow);
-    color: var(--gs-navy);
-    font-weight: 800;
-    font-size: 22px;
-    letter-spacing: -0.5px;
-    padding: 3px 9px 4px;
-    border-radius: 6px;
-  }
-
-  .wordmark .num {
-    font-weight: 800;
-    font-size: 22px;
-    letter-spacing: -0.5px;
-    color: #fff;
-  }
-
-  .brand-sub {
-    margin-top: 6px;
-    font-size: 13px;
-    color: #C8CFE3;
-    font-weight: 600;
-  }
-
-  .icon-btn {
-    width: 38px;
-    height: 38px;
-    border-radius: 10px;
-    border: 1px solid rgba(255,255,255,0.16);
-    background: rgba(255,255,255,0.08);
-    color: #fff;
-    font-size: 17px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex: none;
-  }
-
-  .icon-btn:hover { background: rgba(255,255,255,0.15); }
-
-  /* ---------- Main ---------- */
-
-  main {
-    flex: 1;
-    padding: 20px 16px 40px;
-  }
-
-  .card {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    box-shadow: var(--shadow);
-    padding: 22px 20px;
-    margin-bottom: 16px;
-  }
-
-  h2.card-title {
-    margin: 0 0 16px;
-    font-size: 16px;
-    font-weight: 700;
-    text-align: left;
-  }
-
-  label.field-label {
-    display: block;
-    font-size: 12.5px;
-    font-weight: 600;
-    color: var(--muted);
-    margin-bottom: 6px;
-  }
-
-  .field {
-    margin-bottom: 14px;
-  }
-
-  .pass-wrap {
-    position: relative;
-  }
-
-  input[type="text"],
-  input[type="password"] {
-    width: 100%;
-    padding: 12px 14px;
-    border-radius: 10px;
-    border: 1.5px solid var(--border);
-    background: var(--bg);
-    color: var(--text);
-    font-size: 15px;
-    font-family: inherit;
-    outline: none;
-    transition: border-color .15s ease;
-  }
-
-  input[type="text"]:focus,
-  input[type="password"]:focus {
-    border-color: var(--gs-blue);
-  }
-
-  .pass-wrap input { padding-right: 44px; }
-
-  .eye-btn {
-    position: absolute;
-    right: 6px;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 34px;
-    height: 34px;
-    border: none;
-    background: transparent;
-    color: var(--muted);
-    font-size: 16px;
-    cursor: pointer;
-    border-radius: 8px;
-  }
-
-  .eye-btn:hover { background: var(--gs-navy-2); }
-
-  .remember-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 13.5px;
-    color: var(--muted);
-    font-weight: 600;
-    margin: 4px 0 18px;
-  }
-
-  .remember-row input { accent-color: var(--gs-blue); width: 16px; height: 16px; }
-
-  button.primary {
-    width: 100%;
-    padding: 13px;
-    border: none;
-    border-radius: 10px;
-    background: var(--gs-blue);
-    color: #fff;
-    font-size: 15.5px;
-    font-weight: 700;
-    font-family: inherit;
-    cursor: pointer;
-    transition: transform .1s ease, opacity .15s ease;
-  }
-
-  button.primary:hover { opacity: 0.92; }
-  button.primary:active { transform: scale(0.99); }
-
-  button.ghost-danger {
-    width: 100%;
-    padding: 13px;
-    border: 1.5px solid var(--danger);
-    border-radius: 10px;
-    background: transparent;
-    color: var(--danger);
-    font-size: 15px;
-    font-weight: 700;
-    font-family: inherit;
-    cursor: pointer;
-  }
-
-  #msg {
-    margin: 12px 0 0;
-    text-align: center;
-    color: var(--danger);
-    font-weight: 700;
-    font-size: 13.5px;
-    min-height: 1px;
-  }
-
-  /* ---------- ID badge ---------- */
-
-  .badge-head {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 16px;
-    padding-bottom: 16px;
-    border-bottom: 1px dashed var(--border);
-  }
-
-  .badge-avatar {
-    width: 46px;
-    height: 46px;
-    border-radius: 12px;
-    background: var(--gs-yellow);
-    color: var(--gs-navy);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 800;
-    font-size: 18px;
-    flex: none;
-  }
-
-  .badge-name {
-    font-weight: 800;
-    font-size: 17px;
-    line-height: 1.25;
-  }
-
-  .badge-role {
-    font-size: 12.5px;
-    color: var(--muted);
-    font-weight: 600;
-    margin-top: 2px;
-  }
-
-  .employee-info {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-  }
-
-  .info-title {
-    font-size: 11.5px;
-    color: var(--muted);
-    font-weight: 700;
-    margin-bottom: 3px;
-  }
-
-  .info-value {
-    font-weight: 700;
-    font-size: 14.5px;
-  }
-
-  /* ---------- Cash difference ---------- */
-
-  .diff-card {
-    background: var(--alert-bg);
-    border: 1px solid var(--alert-border);
-    border-radius: 16px;
-    padding: 18px 20px;
-    margin-bottom: 16px;
-    text-align: center;
-  }
-
-  .diff-label {
-    font-size: 13px;
-    font-weight: 700;
-    color: var(--text);
-    opacity: 0.75;
-  }
-
-  .diff-amount {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 28px;
-    font-weight: 700;
-    margin-top: 6px;
-    letter-spacing: -0.5px;
-  }
-
-  /* ---------- Salary receipt ---------- */
-
-  .receipt {
-    border-radius: 12px;
-    overflow: hidden;
-    border: 1px solid var(--border);
-  }
-
-  .receipt-row {
-    display: flex;
-    align-items: baseline;
-    gap: 8px;
-    padding: 9px 14px;
-    border-bottom: 1px dashed var(--border);
-    font-size: 13.5px;
-  }
-
-  .receipt-row:last-child { border-bottom: none; }
-
-  .receipt-row .r-label {
-    color: var(--muted);
-    font-weight: 600;
-  }
-
-  .receipt-row .r-fill {
-    flex: 1;
-    border-bottom: 1px dotted var(--border);
-    transform: translateY(-3px);
-  }
-
-  .receipt-row .r-value {
-    font-family: 'IBM Plex Mono', monospace;
-    font-weight: 600;
-    white-space: nowrap;
-  }
-
-  .receipt-row.total {
-    background: var(--success-bg);
-    border-top: 2px solid var(--success);
-    border-bottom: none;
-    padding: 13px 14px;
-  }
-
-  .receipt-row.total .r-label {
-    color: var(--success);
-    font-weight: 800;
-    font-size: 14px;
-  }
-
-  .receipt-row.total .r-fill { display: none; }
-
-  .receipt-row.total .r-value {
-    color: var(--success);
-    font-weight: 800;
-    font-size: 17px;
-  }
-
-  .salary-loading, .salary-empty {
-    text-align: center;
-    color: var(--muted);
-    font-size: 13.5px;
-    padding: 18px 0;
-  }
-
-  .salary-empty { color: var(--danger); }
-
-  .section-title {
-    font-size: 16px;
-    font-weight: 700;
-    margin: 24px 0 12px;
-    padding-top: 4px;
-  }
-
-  .card-note {
-    font-size: 11.5px;
-    color: var(--muted);
-    text-align: center;
-    margin-top: 14px;
-  }
-
-  /* ---------- Цалингийн урьдчилсан тооцоолуур ---------- */
-  .estimate-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
-  .estimate-grid .field { margin-bottom:0; min-width:0; }
-  .estimate-grid .full { grid-column:1/-1; }
-  .estimate-input {
-    width:100%; padding:11px 12px; border:1.5px solid var(--border);
-    border-radius:10px; background:var(--bg); color:var(--text);
-    font:inherit; font-size:14px;
-  }
-  .estimate-input:focus { outline:2px solid var(--gs-blue); outline-offset:1px; }
-  .estimate-help { font-size:12px; color:var(--muted); line-height:1.5; margin:10px 0 14px; }
-  .estimate-output { margin-top:16px; }
-  .estimate-warning { font-size:12px; color:var(--muted); line-height:1.6; margin:12px 0 0; }
-  .estimate-error { color:var(--danger); font-size:13px; font-weight:700; margin-top:10px; }
-
+:root{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:#142444;background:#f3f6fb;--blue:#1462d5;--border:#d9e2ef;--muted:#64748b}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh}
+header{background:#0952ba;color:white;padding:15px max(20px,calc((100vw - 1420px)/2))}
+.brand{font-size:23px;font-weight:850;letter-spacing:-.4px}.brand span{color:#58e0ed}
+.bar{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+small,.hint{font-size:12px;color:var(--muted)}
+header small{color:#d6e7ff}
+main{max-width:1440px;margin:0 auto;padding:22px 20px 70px}
+.card{background:white;border:1px solid var(--border);border-radius:15px;padding:22px;box-shadow:0 6px 24px #153d7510;margin-bottom:18px}
+.login-wrap{max-width:440px;margin:62px auto}
+h1{font-size:23px;margin:0 0 8px}h2{font-size:19px;margin:0 0 14px}h3{font-size:15px;margin:4px 0 12px}
+p{line-height:1.55}label{font-size:13px;font-weight:650;display:block;margin-bottom:5px}
+input,select,textarea,button{font:inherit}
+input,select,textarea{width:100%;padding:10px 12px;border:1px solid #c7d3e3;border-radius:9px;background:#fff;color:#112240}
+input:focus,select:focus,textarea:focus{outline:2px solid #99c6ff;outline-offset:1px}
+.field{min-width:0;margin-bottom:15px}
+.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+button{border:1px solid #afc5e0;background:#f7faff;color:#153b70;border-radius:9px;padding:10px 15px;font-weight:700;cursor:pointer}
+button:hover{filter:brightness(.96)}button:disabled{opacity:.55;cursor:wait}
+button.primary{background:var(--blue);color:#fff;border-color:var(--blue)}
+button.ghost{background:transparent;color:inherit;border-color:#ffffff6b}
+button.active{background:#e7f1ff;color:#0b56ba;border-color:#9fc7ff}
+.actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.tabs{display:flex;flex-wrap:wrap;gap:8px;margin:15px 0}
+.tag{border-radius:20px;background:#e8f3ff;color:#0b55ad;padding:5px 10px;font-weight:700;font-size:12px}
+.muted{color:var(--muted)}.error{color:#b82020}.success{color:#08774c}
+#status{min-height:22px;font-weight:650;margin-top:8px}
+.toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:space-between}
+.toolbar input{width:170px}
+.tiny{font-size:12px}
+.scroll{overflow:auto;max-width:100%;border:1px solid var(--border);border-radius:10px}
+table{border-collapse:collapse;width:100%;font-size:12px;background:white}
+th,td{border-bottom:1px solid #e2e8f0;border-right:1px solid #edf1f7;padding:8px;text-align:left;white-space:nowrap}
+thead th{background:#eef4fb;color:#2b466b;position:sticky;top:0;z-index:1}
+.schedule th:first-child,.schedule td:first-child{position:sticky;left:0;z-index:2;background:white;min-width:155px}
+.schedule thead th:first-child{background:#e7f0fb;z-index:3}
+.schedule td{padding:3px}
+.schedule td select{padding:7px 2px;width:59px;font-size:11px;text-align:center;border:1px solid transparent}
+.schedule td select.morning{background:#c9f4f4}
+.schedule td select.day{background:#fbe1ae}
+.schedule td select.night{background:#d5d5fc}
+.schedule td select.pending{border-color:#dba300}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:12px;margin:12px 0}
+.dot{display:inline-block;width:11px;height:11px;border-radius:3px;vertical-align:middle;margin-right:4px}
+.summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:12px}
+.metric{background:#f1f6fc;border-radius:11px;padding:14px}
+.metric strong{display:block;font-size:20px;margin-top:6px;word-break:break-word}
+.receipt{max-width:630px}.receipt-row{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:9px 3px;border-bottom:1px dashed #d7e0ed}
+.receipt-row strong{text-align:right;font-variant-numeric:tabular-nums}
+.receipt-row.total{font-size:17px;font-weight:800;background:#e7f7ed;color:#006939;padding:13px;border-radius:8px;margin-top:12px}
+@media(max-width:600px){main{padding:16px 12px 65px}.card{padding:16px}.login-wrap{margin:34px auto}header{padding:15px}h1{font-size:20px}.toolbar{align-items:flex-start}}
 </style>
 </head>
-
 <body>
+<header><div class="bar">
+  <div><div class="brand">GS<span>25</span> · Ажилтны портал</div><small>Ээлж · Цалин · Кассын зөрүү</small></div>
+  <div id="sessionBar" class="actions" hidden><span id="who"></span><button class="ghost" id="logoutBtn">Гарах</button></div>
+</div></header>
+<main>
+  <section class="card login-wrap" id="loginPanel">
+    <h1>Нэвтрэх</h1>
+    <p class="muted">Менежерийн бүртгэсэн ажилтны код болон 4 оронтой PIN-ээр нэвтэрнэ.</p>
+    <form id="loginForm">
+      <div class="field"><label for="loginCode">Ажилтны код (ID)</label><input id="loginCode" autocomplete="username" inputmode="numeric" pattern="[0-9]{4,12}" required></div>
+      <div class="field"><label for="loginPin">4 оронтой PIN</label><input id="loginPin" type="password" autocomplete="current-password" inputmode="numeric" pattern="[0-9]{4}" minlength="4" maxlength="4" required></div>
+      <button class="primary" type="submit">Нэвтрэх</button>
+    </form>
+    <p class="hint">PIN олон удаа буруу оруулбал бүртгэл түр түгжигдэнэ.</p>
+    <div id="loginStatus" role="alert"></div>
+  </section>
 
-<div class="shell">
-
-  <div class="brandbar">
-    <div class="brand-row">
-      <div class="wordmark">
-        <span class="mark">GS</span><span class="num">25</span>
-      </div>
-      <button class="icon-btn" onclick="toggleDark()" title="Харагдах байдал">🌙</button>
+  <section id="portalPanel" hidden>
+    <div class="toolbar card">
+      <div><h1 id="welcome"></h1><div class="muted" id="subhead"></div></div>
+      <div class="actions"><label for="monthInput" style="margin:0">Сар</label><input id="monthInput" type="month" aria-label="Тайлангийн сар"><button id="refreshBtn">Шинэчлэх</button></div>
     </div>
-    <div class="brand-sub">Ажилтны портал</div>
-  </div>
+    <div id="status" role="status" aria-live="polite"></div>
 
-  <main>
-
-    <!-- НЭВТРЭХ -->
-    <div class="card" id="loginPanel">
-
-      <h2 class="card-title">Нэвтрэх</h2>
-
-      <div class="field">
-        <label class="field-label">Ажилтны код</label>
-        <input type="text" id="empId" placeholder="Жишээ: 111111">
+    <section id="managerPanel" hidden>
+      <div class="tabs">
+        <button data-tab="schedule" class="active">Ээлжийн хүснэгт</button>
+        <button data-tab="register">Ажилтан бүртгэх</button>
+        <button data-tab="cash">Кассын зөрүү оруулах</button>
       </div>
-
-      <div class="field">
-        <label class="field-label">Нууц үг</label>
-        <div class="pass-wrap">
-          <input type="password" id="empPass" placeholder="Нууц үг">
-          <button class="eye-btn" onclick="togglePass()" title="Нууц үг харах">👁</button>
+      <div id="tabSchedule">
+        <div class="card"><h2>Ажилтны ээлжийн хуваарь</h2>
+          <p class="muted tiny">Нүдэнд ээлж сонгоход тухайн өдрийн цаг менежерийн баталснаар хадгалагдана. Хоосон бол ээлжгүй.</p>
+          <div class="legend"><span><i class="dot" style="background:#c9f4f4"></i>Өглөө 07:45–16:30</span><span><i class="dot" style="background:#fbe1ae"></i>Өдөр 15:15–00:15</span><span><i class="dot" style="background:#d5d5fc"></i>Шөнө 23:45–08:45</span></div>
+          <div id="schedule"></div>
+        </div>
+        <div class="card"><h2>Ажилтнуудын батлагдсан цаг, цалингийн урьдчилсан дүн</h2><div id="staffSummary"></div></div>
+      </div>
+      <div id="tabRegister" hidden>
+        <div class="card">
+          <h2>Шинэ ажилтан бүртгэх</h2>
+          <p class="muted tiny">Хувийн мэдээллийн анкетгүй. Ажилтны код нэвтрэх ID болно. PIN-г зөвхөн бүртгэх үед оруулна, ил харагдахгүй хадгалагдана.</p>
+          <form id="registerForm" class="form-grid">
+            <div class="field"><label for="newCode">Ажилтны код / Нэвтрэх ID</label><input id="newCode" inputmode="numeric" pattern="[0-9]{4,12}" required></div>
+            <div class="field"><label for="newName">Овог, нэр / Дэлгэцэнд харагдах нэр</label><input id="newName" maxlength="120" required></div>
+            <div class="field"><label for="newRole">Албан тушаал</label><select id="newRole"><option value="Staff">Staff</option><option value="SL">SL</option><option value="BM">BM</option></select></div>
+            <div class="field"><label for="newLevel">Level</label><select id="newLevel"></select></div>
+            <div class="field"><label for="newPin">Анхны 4 оронтой PIN</label><input id="newPin" type="password" inputmode="numeric" autocomplete="new-password" pattern="[0-9]{4}" minlength="4" maxlength="4" required></div>
+            <div class="field"><label>Салбар</label><input id="newBranch" readonly></div>
+            <div class="field"><label>&nbsp;</label><button class="primary" type="submit">Ажилтан бүртгэх</button></div>
+          </form>
+        </div>
+        <div class="card"><h2>Ажилтны PIN солих</h2>
+          <form id="resetForm" class="form-grid">
+            <div class="field"><label for="resetCode">Ажилтан</label><select id="resetCode" required></select></div>
+            <div class="field"><label for="resetPin">Шинэ 4 оронтой PIN</label><input id="resetPin" type="password" autocomplete="new-password" pattern="[0-9]{4}" minlength="4" maxlength="4" required></div>
+            <div class="field"><label>&nbsp;</label><button type="submit">PIN солих</button></div>
+          </form>
+          <p class="hint">PIN солиход тухайн ажилтны өмнөх нэвтрэлтийн сешнүүд дуусна.</p>
         </div>
       </div>
-
-      <label class="remember-row">
-        <input type="checkbox" id="remember">
-        Намайг сана
-      </label>
-
-      <button class="primary" onclick="login()">Нэвтрэх</button>
-
-      <p id="msg"></p>
-
-    </div>
-
-
-    <div id="preLoginCalculator">
-      <div class="section-title">Цалин тооцох</div>
-      <section class="card" aria-labelledby="estimateTitle">
-        <h2 class="card-title" id="estimateTitle">Цалингийн урьдчилсан тооцоолол</h2>
-        <p class="estimate-help">Албан тушаал, түвшин, сарын норм цаг болон ажилласан ээлжийн тоогоо оруулна уу. Түвшингийн нэмэгдэл автоматаар бодогдоно. SOP, KPI болон бусад урамшууллыг оруулахгүй.</p>
-        <div class="estimate-grid">
-          <div class="field">
-            <label class="field-label" for="estimateRole">Албан тушаал</label>
-            <select class="estimate-input" id="estimateRole" onchange="updateEstimateBase()">
-              <option value="BM">BM</option>
-              <option value="SL">SL</option>
-              <option value="Staff">Staff</option>
-            </select>
-          </div>
-          <div class="field">
-            <label class="field-label" for="estimateLevel">Level</label>
-            <select class="estimate-input" id="estimateLevel" onchange="updateEstimateBase()"></select>
-          </div>
-          <div class="field full">
-            <label class="field-label" for="estimateBase">Үндсэн цалин (₮)</label>
-            <input class="estimate-input" id="estimateBase" type="number" min="0" step="1000" readonly>
-          </div>
-          <div class="field">
-            <label class="field-label" for="estimateNorm">Сарын норм цаг</label>
-            <input class="estimate-input" id="estimateNorm" type="number" value="176" min="1" max="744" step="0.25">
-          </div>
-          <div class="field">
-            <label class="field-label" for="estimateWorkedDays">Бодит ажилласан хоног</label>
-            <input class="estimate-input" id="estimateWorkedDays" type="number" min="0" max="31" step="1" placeholder="Хоосон бол ээлжийн нийлбэр">
-          </div>
-          <div class="field">
-            <label class="field-label" for="estimateAdvance">Авсан урьдчилгаа (₮)</label>
-            <input class="estimate-input" id="estimateAdvance" type="number" value="0" min="0" step="1000">
-          </div>
-          <div class="field">
-            <label class="field-label" for="estimateMorning">Өглөөний ээлж (тоо)</label>
-            <input class="estimate-input" id="estimateMorning" type="number" value="0" min="0" max="100" step="1">
-          </div>
-          <div class="field">
-            <label class="field-label" for="estimateDay">Өдрийн ээлж (тоо)</label>
-            <input class="estimate-input" id="estimateDay" type="number" value="0" min="0" max="100" step="1">
-          </div>
-          <div class="field full">
-            <label class="field-label" for="estimateNight">Шөнийн ээлж (тоо)</label>
-            <input class="estimate-input" id="estimateNight" type="number" value="0" min="0" max="100" step="1">
-          </div>
-          <div class="field full">
-            <label class="field-label" for="estimateRelief">ХХОАТ-ын хөнгөлөлт (₮, мэдэж байвал)</label>
-            <input class="estimate-input" id="estimateRelief" type="number" value="12000" min="0" step="1000">
-          </div>
+      <div id="tabCash" hidden>
+        <div class="card"><h2>Кассын зөрүү бүртгэх</h2>
+          <form id="cashForm" class="form-grid">
+            <div class="field"><label for="cashCode">Ажилтан</label><select id="cashCode" required></select></div>
+            <div class="field"><label for="cashDate">Огноо</label><input type="date" id="cashDate" required></div>
+            <div class="field"><label for="cashAmount">Зөрүүний дүн (₮)</label><input type="number" id="cashAmount" step="0.01" required placeholder="Жишээ: 15000"></div>
+            <div class="field" style="grid-column:1/-1"><label for="cashNote">Тайлбар</label><textarea id="cashNote" rows="3" minlength="3" maxlength="1000" required></textarea></div>
+            <div><button class="primary" type="submit">Зөрүү хадгалах</button></div>
+          </form>
+          <p class="hint">Зөрүүг ажилтанд тусад нь харуулна; цалингаас автоматаар суутгахгүй. Алдааг залруулахдаа тайлбартай эсрэг дүнгээр бүртгэнэ.</p>
         </div>
-        <p class="estimate-help">Тогтмол утгууд: хоол 6,000₮/хоног, унаа 4,000₮/хоног, өдрийн ээлжийн шөнийн цаг 2.25, шөнийн ээлжийн шөнийн цаг 6.25. Өдрийн цаг = ажилласан хоног × 8 − шөнийн цаг. SOP болон KPI-г тооцохгүй.</p>
-        <button class="primary" type="button" onclick="calculateEstimate()">Цалин тооцоолох</button>
-        <div id="estimateError" class="estimate-error" role="alert"></div>
-        <div id="estimateResult" class="estimate-output" aria-live="polite"></div>
-        <p class="estimate-warning">Энэ бол урьдчилсан тооцоо. Баярын цаг, илүү цаг, амралт, өвчний чөлөө, тусгай суутгал болон сарын бодит татварын хөнгөлөлт ороогүй. Сарын норм цаг болон татварын нөхцөлийг албан ёсны цалингийн хуудсаар баталгаажуулна уу.</p>
-      </section>
-
-    </div>
-
-    <!-- АЖИЛТНЫ PANEL -->
-    <div id="userPanel" style="display:none;">
-
-      <div class="card">
-        <div class="badge-head">
-          <div class="badge-avatar" id="badgeInitial">·</div>
-          <div>
-            <div class="badge-name" id="badgeName">—</div>
-            <div class="badge-role" id="badgeRole">—</div>
-          </div>
-        </div>
-
-        <div id="employeeInfo" class="employee-info"></div>
+        <div class="card"><h2>Сарын кассын зөрүүний бүртгэл</h2><div id="managerCash"></div></div>
       </div>
+    </section>
 
-      <div class="diff-card">
-        <div class="diff-label">Кассын зөрүү</div>
-        <div id="differenceAmount" class="diff-amount">—</div>
-      </div>
-
-      <div class="section-title">Цалингийн задаргаа</div>
-
-      <div class="card" style="padding:14px 0;">
-        <div id="salaryLoading" class="salary-loading">Цалингийн мэдээлэл ачаалж байна…</div>
-        <div id="salaryResult"></div>
-      </div>
-
-
-      <button class="ghost-danger" onclick="logout()">Гарах</button>
-
-    </div>
-
-  </main>
-
-</div>
-
-
+    <section id="employeePanel" hidden>
+      <div class="summary-grid" id="employeeMetrics"></div>
+      <div class="card"><h2>Миний цалин — урьдчилсан тооцоо</h2><p class="hint">Зөвхөн менежерийн баталсан ээлж орно. SOP, KPI, нэмэлт суутгал болон бодит цалингийн хуудсаар тохируулагдах дүн ороогүй.</p><div id="salary"></div></div>
+      <div class="card"><h2>Миний ажилласан ээлж</h2><div id="employeeShifts"></div></div>
+      <div class="card"><h2>Миний кассын зөрүү</h2><div id="employeeCash"></div></div>
+    </section>
+  </section>
+</main>
 <script>
-
-/* =====================================================
-   GOOGLE SHEET API
-===================================================== */
-
-const finalApi =
-  "https://opensheet.elk.sh/1eQ4HH3qhpMLda1mdt76iffTw2hjt0aifH-o9wGpTfQs/final";
-
-const salaryApi =
-  "https://opensheet.elk.sh/1eQ4HH3qhpMLda1mdt76iffTw2hjt0aifH-o9wGpTfQs/Tsalin";
-
-
-/* =====================================================
-   DATA
-===================================================== */
-
-let finalData = [];
-let salaryData = [];
-
-
-/* =====================================================
-   DATA АЧААЛАХ
-===================================================== */
-
-async function loadData() {
-  const msg = document.getElementById("msg");
-  const loadSheet = async (url) => {
-    const response = await fetch(url, { cache: "no-store" });
-    if (!response.ok) throw new Error("HTTP " + response.status);
-    const rows = await response.json();
-    if (!Array.isArray(rows)) throw new Error("Хүснэгтийн бүтэц буруу");
-    return rows;
-  };
-  const [employees, salaries] = await Promise.allSettled([
-    loadSheet(finalApi), loadSheet(salaryApi)
-  ]);
-  if (employees.status === "fulfilled") {
-    finalData = employees.value;
-    msg.innerText = "";
-  } else {
-    finalData = [];
-    msg.innerText = "❌ Ажилтны мэдээлэл ачаалагдсангүй. Хуудсаа шинэчилж дахин оролдоно уу.";
-    console.error("final sheet:", employees.reason);
-  }
-  if (salaries.status === "fulfilled") {
-    salaryData = salaries.value;
-  } else {
-    salaryData = [];
-    console.error("Tsalin sheet:", salaries.reason);
-  }
+"use strict";
+const $=id=>document.getElementById(id);
+let state={data:null,tab:"schedule"};
+const roles={BM:{base:1750000,levels:{1:0,2:100000,3:350000,4:600000}},SL:{base:1300000,levels:{2:100000,3:200000,4:300000}},Staff:{base:1000000,levels:{1:100000,2:200000}}};
+const shiftNames={morning:"Ө",day:"Өд",night:"Ш"};
+const escapeHtml=value=>String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const money=value=>Number(value).toLocaleString("mn-MN",{maximumFractionDigits:2})+" ₮";
+const dcount=month=>new Date(Number(month.slice(0,4)),Number(month.slice(5,7)),0).getDate();
+const dateKey=(month,day)=>month+"-"+String(day).padStart(2,"0");
+const localMonth=()=>{let d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0");};
+const localDate=()=>{let d=new Date();return localMonth()+"-"+String(d.getDate()).padStart(2,"0");};
+const q=action=>"/api/portal?action="+encodeURIComponent(action);
+async function api(action,body){
+  const r=await fetch(q(action),{method:body===undefined?"GET":"POST",
+    headers:body===undefined?{}:{"Content-Type":"application/json"},
+    credentials:"same-origin",cache:"no-store",
+    ...(body===undefined?{}:{body:JSON.stringify(body)})});
+  const result=await r.json().catch(()=>({error:"Серверийн хариу буруу байна."}));
+  if(!r.ok)throw new Error(result.error||"Хүсэлт амжилтгүй.");
+  return result;
 }
-
-/* =====================================================
-   PASSWORD SHOW / HIDE
-===================================================== */
-
-function togglePass() {
-
-  const pass =
-    document.getElementById("empPass");
-
-  pass.type =
-    pass.type === "password"
-      ? "text"
-      : "password";
-
+function status(message,type="success"){const el=$("status");el.className=type;el.textContent=message||"";}
+function loginStatus(message){$("loginStatus").className="error";$("loginStatus").textContent=message||"";}
+function loading(button,busy){if(button)button.disabled=busy;}
+function monthShifts(employeeCode,approvedOnly=true){
+  return (state.data.shifts||[]).filter(s=>s.employee_code===employeeCode&&(!approvedOnly||s.approved));
 }
-
-
-/* =====================================================
-   LOGIN
-===================================================== */
-
-function login() {
-
-  const id =
-    document.getElementById("empId").value.trim();
-
-  const pass =
-    document.getElementById("empPass").value.trim();
-
-
-  if (!id || !pass) {
-
-    document.getElementById("msg").innerText =
-      "❌ Ажилтны код болон нууц үгээ оруулна уу.";
-
-    return;
-
-  }
-
-
-  /* -----------------------------
-     FINAL SHEET-ЭЭС АЖИЛТАН ХАЙХ
-  ----------------------------- */
-
-  if (!finalData.length) {
-    document.getElementById("msg").innerText = "❌ Ажилтны мэдээлэл ачаалагдаагүй байна. Хуудсаа шинэчилнэ үү.";
-    return;
-  }
-
-  const emp = finalData.find(e =>
-    String(e.ID ?? "").trim() === id &&
-    String(e.password ?? "").trim() === pass
-  );
-
-
-  if (!emp) {
-
-    document.getElementById("msg").innerText =
-      "❌ Ажилтны код эсвэл нууц үг буруу байна.";
-
-    return;
-
-  }
-
-
-  document.getElementById("msg").innerText = "";
-
-
-  /* -----------------------------
-     PANEL
-  ----------------------------- */
-
-  document.getElementById("loginPanel").style.display =
-    "none";
-
-  document.getElementById("userPanel").style.display =
-    "block";
-  document.getElementById("preLoginCalculator").style.display = "none";
-
-
-  /* -----------------------------
-     АЖИЛТНЫ МЭДЭЭЛЭЛ
-  ----------------------------- */
-
-  showEmployeeInfo(emp);
-
-
-  /* -----------------------------
-     КАССНЫ ЗӨРҮҮ
-  ----------------------------- */
-
-  showDifference(emp);
-
-
-  /* -----------------------------
-     ЦАЛИН
-  ----------------------------- */
-
-  showSalary(emp);
-
-
-  /* -----------------------------
-     REMEMBER
-  ----------------------------- */
-
-  if (
-    document.getElementById("remember").checked
-  ) {
-
-    localStorage.setItem(
-      "user",
-      JSON.stringify(emp)
-    );
-
-  }
-
+function salaryCalc(employee){
+  const shifts=monthShifts(employee.employee_code);
+  if(!shifts.length)return null;
+  const morning=shifts.filter(s=>s.shift_kind==="morning").length;
+  const day=shifts.filter(s=>s.shift_kind==="day").length;
+  const night=shifts.filter(s=>s.shift_kind==="night").length;
+  const workedDays=morning+day+night;
+  // Preserve existing GitHub estimator business rules:
+  const nightHours=day*2.25+night*6.25;
+  const dayHours=workedDays*8-nightHours;
+  const role=roles[employee.salary_role];
+  const base=role.base;
+  const hourly=base/Number(employee.monthly_norm);
+  const dayPay=hourly*dayHours;
+  const nightPay=hourly*nightHours*1.2;
+  const food=workedDays*6000;
+  const travel=workedDays*4000;
+  const levelPay=role.levels[employee.level]||0;
+  const gross=dayPay+nightPay+food+travel+levelPay;
+  const social=Math.round(gross*.115*100)/100;
+  const tax=Math.max(0,Math.round(((gross-social)*.10-Number(employee.tax_relief_mnt))*100)/100);
+  const net=Math.round((gross-social-tax)*100)/100;
+  const transfer=Math.round((net-Number(employee.advance_mnt))*100)/100;
+  return {morning,day,night,workedDays,dayHours,nightHours,base,dayPay,nightPay,food,travel,levelPay,gross,social,tax,net,transfer};
 }
-
-
-/* =====================================================
-   АЖИЛТНЫ МЭДЭЭЛЭЛ
-===================================================== */
-
-function showEmployeeInfo(emp) {
-
-  const name = emp["Нэр"] || "";
-  const role = emp["Албан тушаал"] || "";
-  const branch = emp["Салбар"] || emp["Салбар нэгж"] || "";
-
-  document.getElementById("badgeInitial").innerText =
-    (String(name).trim().charAt(0) || "?").toUpperCase();
-
-  document.getElementById("badgeName").innerText =
-    safeText(name) || "—";
-
-  document.getElementById("badgeRole").innerText =
-    [safeText(role), safeText(branch)].filter(Boolean).join(" · ") || "—";
-
-  document.getElementById("employeeInfo").innerHTML = `
-
-    <div>
-      <div class="info-title">Ажилтны код</div>
-      <div class="info-value">
-        ${safe(emp["ID"])}
-      </div>
-    </div>
-
-    <div>
-      <div class="info-title">Салбар</div>
-      <div class="info-value">
-        ${safe(branch)}
-      </div>
-    </div>
-
-  `;
-
+function resultTable(headers,rows){
+  if(!rows.length)return '<p class="muted">Энэ сард бүртгэл алга.</p>';
+  return '<div class="scroll"><table><thead><tr>'+headers.map(h=>'<th>'+escapeHtml(h)+'</th>').join("")+'</tr></thead><tbody>'+
+    rows.map(cells=>'<tr>'+cells.map(c=>'<td>'+escapeHtml(c)+'</td>').join("")+'</tr>').join("")+'</tbody></table></div>';
 }
-
-
-/* =====================================================
-   КАССНЫ ЗӨРҮҮ
-===================================================== */
-
-function showDifference(emp) {
-
-  const amount =
-    emp["Зөрүү дүн"] || 0;
-
-  document.getElementById(
-    "differenceAmount"
-  ).innerText =
-    "₮" + formatMoney(amount);
-
+function metric(label,value){
+ return '<div class="metric"><span class="muted tiny">'+escapeHtml(label)+'</span><strong>'+escapeHtml(value)+'</strong></div>';
 }
-
-
-/* =====================================================
-   ЦАЛИНГИЙН ЗАДАРГАА
-===================================================== */
-
-function showSalary(emp) {
-
-  const salaryLoading =
-    document.getElementById("salaryLoading");
-
-  const salaryResult =
-    document.getElementById("salaryResult");
-
-
-  salaryLoading.style.display =
-    "block";
-
-  salaryResult.innerHTML =
-    "";
-
-
-  /*
-    final sheet-ийн ID
-    =
-    tsalin sheet-ийн "Ажилтны код"
-  */
-
-  const employeeId =
-    String(emp["ID"]).trim();
-
-
-  const salary =
-    salaryData.find(s =>
-      String(s["Ажилтны код"]).trim() === employeeId
-    );
-
-
-  salaryLoading.style.display =
-    "none";
-
-
-  if (!salary) {
-
-    salaryResult.innerHTML = `
-      <p class="salary-empty">
-        ❌ Энэ ажилтны цалингийн мэдээлэл олдсонгүй.
-      </p>
-    `;
-
-    return;
-
-  }
-
-
-  /*
-    Цалингийн sheet-ийн баганууд
-  */
-
-  const hourFields = [
-    "Фонт цаг",
-    "Өдрийн цаг",
-    "Шөнийн цаг",
-    "Илүү цаг"
-  ];
-
-  const fields = [
-
-    "Үндсэн цалин",
-    "Фонт цаг",
-    "Өдрийн цаг",
-    "Шөнийн цаг",
-    "Илүү цаг",
-    "Өдрийн цалин",
-    "Шөнийн цалин",
-    "Баярын нэмэгдэл",
-    "Бодогдсон цалин",
-    "Унааны нэмэгдэл",
-    "Хоолны нэмэгдэл",
-    "SOP",
-    "KPI",
-    "BM LOSS",
-    "Бусад нэмэгдэл",
-    "Нийт нэмэгдэлийн дүн",
-    "Олговол зохих",
-    "НДШ /Ажилтанаас/",
-    "ХХОАТ",
-    "ХХОАТ хөнглөлт",
-    "Нийт суутгал",
-    "Бодит цалин"
-
-  ];
-
-
-  let html = `<div class="receipt">`;
-
-
-  fields.forEach(field => {
-
-    const value =
-      salary[field] ?? "";
-
-
-    const isRealSalary =
-      field === "Бодит цалин";
-
-
-    html += `
-
-      <div class="receipt-row ${isRealSalary ? "total" : ""}">
-        <span class="r-label">${safe(field)}</span>
-        ${isRealSalary ? "" : `<span class="r-fill"></span>`}
-        <span class="r-value">${hourFields.includes(field) ? formatHours(value) : formatSalary(value)}</span>
-      </div>
-
-    `;
-
+function showTabs(){
+  for(const button of document.querySelectorAll("[data-tab]"))button.classList.toggle("active",button.dataset.tab===state.tab);
+  $("tabSchedule").hidden=state.tab!=="schedule";
+  $("tabRegister").hidden=state.tab!=="register";
+  $("tabCash").hidden=state.tab!=="cash";
+}
+function selectEmployees(id){
+  const previous=$(id).value;
+  $(id).innerHTML=(state.data.staff||[]).map(s=>'<option value="'+escapeHtml(s.employee_code)+'">'+escapeHtml(s.display_name+' ('+s.employee_code+')')+'</option>').join("");
+  if((state.data.staff||[]).some(s=>s.employee_code===previous))$(id).value=previous;
+}
+function schedule(){
+  const staff=state.data.staff||[],month=state.data.month,days=dcount(month);
+  if(!staff.length){$("schedule").innerHTML='<p class="muted">Эхлээд ажилтан бүртгэнэ үү.</p>';return;}
+  const calendarDays=Array.from({length:days},(_,i)=>i+1);
+  const weekday=["Ня","Да","Мя","Лх","Пү","Ба","Бя"];
+  const head='<thead><tr><th>Ажилтан</th>'+calendarDays.map(d=>'<th>'+d+'<div class="muted">'+weekday[new Date(Number(month.slice(0,4)),Number(month.slice(5,7))-1,d).getDay()]+'</div></th>').join("")+'</tr></thead>';
+  const existing=new Map((state.data.shifts||[]).map(s=>[s.employee_code+"_"+s.work_date,s]));
+  const rows=staff.map(s=>{
+    const cols=calendarDays.map(d=>{
+      const date=dateKey(month,d),saved=existing.get(s.employee_code+"_"+date);
+      const kind=saved?.shift_kind||"";
+      return '<td><select class="'+escapeHtml(kind)+'" data-emp="'+escapeHtml(s.employee_code)+'" data-date="'+escapeHtml(date)+'" aria-label="'+escapeHtml(s.display_name+" "+date)+'">'+
+        '<option value="" '+(!kind?"selected":"")+'>—</option>'+
+        Object.keys(shiftNames).map(k=>'<option value="'+k+'" '+(k===kind?"selected":"")+'>'+shiftNames[k]+'</option>').join("")+'</select></td>';
+    }).join("");
+    return '<tr><td><strong>'+escapeHtml(s.display_name)+'</strong><div class="muted tiny">'+escapeHtml(s.employee_code)+'</div></td>'+cols+'</tr>';
+  }).join("");
+  $("schedule").innerHTML='<div class="scroll"><table class="schedule">'+head+'<tbody>'+rows+'</tbody></table></div>';
+  $("schedule").querySelectorAll("select").forEach(sel=>sel.addEventListener("change",async()=>{
+    sel.disabled=true;status("Ээлж хадгалж байна…");
+    try{
+      if(sel.value)await api("saveShift",{code:sel.dataset.emp,date:sel.dataset.date,kind:sel.value,approved:true});
+      else await api("removeShift",{code:sel.dataset.emp,date:sel.dataset.date});
+      await loadData(false);status("Ээлж баталгаажиж хадгалагдлаа.");
+    }catch(error){status(error.message,"error");await loadData(false);}
+  }));
+}
+function staffSummary(){
+  const rows=(state.data.staff||[]).map(s=>{
+    const calc=salaryCalc(s);
+    return [s.employee_code,s.display_name,s.salary_role+" · L"+s.level,
+      calc?calc.workedDays+" өдөр":"0",calc?money(calc.transfer):"Тооцоогүй"];
   });
-
-
-  html += `</div>`;
-
-
-  salaryResult.innerHTML =
-    html;
-
+  $("staffSummary").innerHTML=resultTable(["Код","Нэр","Албан тушаал","Батлагдсан өдөр","Урьдчилсан үлдэгдэл"],rows);
 }
-
-
-/* =====================================================
-   МӨНГӨНИЙ FORMAT
-===================================================== */
-
-function formatSalary(value) {
-
-  if (
-    value === null ||
-    value === undefined ||
-    value === ""
-  ) {
-
-    return "-";
-
-  }
-
-
-  const number =
-    Number(
-      String(value)
-        .replace(/,/g, "")
-        .replace(/₮/g, "")
-        .trim()
-    );
-
-
-  if (!isNaN(number)) {
-
-    return "₮" +
-      number.toLocaleString("mn-MN");
-
-  }
-
-
-  return safe(value);
-
+function showCash(id,entries,isManager){
+  const rows=entries.map(x=>[
+    x.business_date,isManager?x.employee_code:null,money(x.amount_mnt),x.explanation
+  ].filter(x=>x!==null));
+  $(id).innerHTML=resultTable(isManager?["Огноо","Ажилтны код","Зөрүүний дүн","Тайлбар"]:["Огноо","Зөрүүний дүн","Тайлбар"],rows);
 }
-
-
-/* =====================================================
-   ЦАГИЙН FORMAT (₮ тэмдэггүй)
-===================================================== */
-
-function formatHours(value) {
-
-  if (
-    value === null ||
-    value === undefined ||
-    value === ""
-  ) {
-
-    return "-";
-
-  }
-
-
-  const number =
-    Number(
-      String(value)
-        .replace(/,/g, "")
-        .trim()
-    );
-
-
-  if (!isNaN(number)) {
-
-    return number.toLocaleString("mn-MN", { maximumFractionDigits: 2 });
-
-  }
-
-
-  return safe(value);
-
+function renderManager(){
+  $("newBranch").value=state.data.user.branch_code;
+  selectEmployees("resetCode");selectEmployees("cashCode");
+  showTabs();schedule();staffSummary();
+  showCash("managerCash",state.data.cash||[],true);
 }
-
-
-/* =====================================================
-   MONEY FORMAT
-===================================================== */
-
-function formatMoney(value) {
-
-  const number =
-    Number(
-      String(value)
-        .replace(/,/g, "")
-        .replace(/₮/g, "")
-    );
-
-
-  if (isNaN(number)) {
-
-    return value;
-
-  }
-
-
-  return number.toLocaleString("mn-MN");
-
+function receiptRow(label,value,total=false){
+  return '<div class="receipt-row '+(total?"total":"")+'"><span>'+escapeHtml(label)+'</span><strong>'+escapeHtml(value)+'</strong></div>';
 }
-
-
-/* =====================================================
-   HTML SAFE
-===================================================== */
-
-function safe(value) {
-
-  if (
-    value === null ||
-    value === undefined
-  ) {
-
-    return "";
-
-  }
-
-  return String(value)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
-
+function renderEmployee(){
+  const user=state.data.user,calc=salaryCalc(user),cash=state.data.cash||[];
+  const cashTotal=cash.reduce((n,x)=>n+Number(x.amount_mnt),0);
+  $("employeeMetrics").innerHTML=metric("Батлагдсан ээлж",calc?calc.workedDays+" өдөр":"0 өдөр")+
+    metric("Цалингийн урьдчилсан үлдэгдэл",calc?money(calc.transfer):"Тооцоогүй")+
+    metric("Сарын кассын зөрүү",money(cashTotal));
+  $("salary").innerHTML=!calc?'<p class="muted">Энэ сард менежерийн баталсан ээлж байхгүй байна.</p>':
+    '<div class="receipt">'+
+    receiptRow("Өглөө / Өдөр / Шөнийн ээлж",calc.morning+" / "+calc.day+" / "+calc.night)+
+    receiptRow("Өдрийн цаг",calc.dayHours.toFixed(2)+" цаг")+
+    receiptRow("Шөнийн цаг",calc.nightHours.toFixed(2)+" цаг")+
+    receiptRow("Үндсэн цалин",money(calc.base))+
+    receiptRow("Өдрийн цалин",money(calc.dayPay))+
+    receiptRow("Шөнийн цалин",money(calc.nightPay))+
+    receiptRow("Түвшингийн нэмэгдэл",money(calc.levelPay))+
+    receiptRow("Хоолны мөнгө",money(calc.food))+
+    receiptRow("Унааны мөнгө",money(calc.travel))+
+    receiptRow("Олговол зохих",money(calc.gross))+
+    receiptRow("НДШ 11.5% (урьдчилсан)",money(calc.social))+
+    receiptRow("ХХОАТ (урьдчилсан)",money(calc.tax))+
+    receiptRow("Авсан урьдчилгаа",money(user.advance_mnt))+
+    receiptRow("Үлдэх олголт (урьдчилсан)",money(calc.transfer),true)+'</div>';
+  const shifts=(state.data.shifts||[]).map(s=>[s.work_date,
+    {morning:"Өглөөний 07:45–16:30",day:"Өдрийн 15:15–00:15",night:"Шөнийн 23:45–08:45"}[s.shift_kind],
+    s.approved?"Батлагдсан":"Батлаагүй"]);
+  $("employeeShifts").innerHTML=resultTable(["Огноо","Ээлж","Төлөв"],shifts);
+  showCash("employeeCash",cash,false);
 }
-
-function safeText(value) {
-  return value === null || value === undefined ? "" : String(value).trim();
+function render(){
+  const user=state.data.user;
+  $("portalPanel").hidden=false;$("loginPanel").hidden=true;$("sessionBar").hidden=false;
+  $("who").textContent=user.display_name+" · "+user.employee_code;
+  $("welcome").textContent=user.access_role==="manager"?"Менежерийн dashboard":"Сайн байна уу, "+user.display_name;
+  $("subhead").textContent=user.branch_code+" · "+(user.access_role==="manager"?"Салбарын менежер":"Ажилтан");
+  $("managerPanel").hidden=user.access_role!=="manager";
+  $("employeePanel").hidden=user.access_role==="manager";
+  if(user.access_role==="manager")renderManager();else renderEmployee();
 }
-
-
-
-/* =====================================================
-   ЦАЛИНГИЙН УРЬДЧИЛСАН ТООЦООЛОЛ
-===================================================== */
-const estimateRoles = {
-  BM: { levels: {1:0, 2:100000, 3:350000, 4:600000}, base:1750000 },
-  SL: { levels: {2:100000, 3:200000, 4:300000}, base:1300000 },
-  Staff: { levels: {1:100000, 2:200000}, base:1000000 }
-};
-
-function updateEstimateBase() {
-  const role = document.getElementById("estimateRole").value;
-  const levelSelect = document.getElementById("estimateLevel");
-  const config = estimateRoles[role];
-  if (!config) return;
-  const previousLevel = levelSelect.value;
-  const levels = Object.keys(config.levels);
-  levelSelect.innerHTML = levels.map(level => '<option value="' + level + '">Level ' + level + '</option>').join("");
-  if (levels.includes(previousLevel)) levelSelect.value = previousLevel;
-  document.getElementById("estimateBase").value = config.base;
-  document.getElementById("estimateResult").innerHTML = "";
-  document.getElementById("estimateError").textContent = "";
+async function loadData(showMessage=true){
+  const month=$("monthInput").value||localMonth();
+  if(showMessage)status("Мэдээлэл ачаалж байна…");
+  const r=await fetch(q("dashboard")+"&month="+encodeURIComponent(month),{credentials:"same-origin",cache:"no-store"});
+  if(r.status===401){showLogin();return;}
+  const result=await r.json().catch(()=>({error:"Хариу буруу байна."}));
+  if(!r.ok)throw new Error(result.error||"Мэдээлэл ачаалагдсангүй.");
+  state.data=result;render();
+  if(showMessage)status("");
 }
-
-function estimateInput(id) {
-  const el = document.getElementById(id);
-  if (!el || el.value.trim() === "") throw new Error("Заавал бөглөх талбар хоосон байна.");
-  const value = Number(el.value);
-  if (!Number.isFinite(value) || value < 0) throw new Error("Талбарт сөрөг эсвэл буруу тоо оруулсан байна.");
-  return value;
+function showLogin(){
+  state.data=null;$("loginPanel").hidden=false;$("portalPanel").hidden=true;$("sessionBar").hidden=true;
 }
-
-function estimateMoney(amount) {
-  return "₮" + amount.toLocaleString("mn-MN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+function updateLevels(){
+ const role=$("newRole").value;
+ const choices=Object.keys(roles[role].levels);
+ $("newLevel").innerHTML=choices.map(n=>'<option value="'+n+'">Level '+n+'</option>').join("");
 }
-
-function estimateRow(label, value, total = false) {
-  return '<div class="receipt-row' + (total ? ' total' : '') + '">' +
-    '<span class="r-label">' + label + '</span>' +
-    (total ? '' : '<span class="r-fill"></span>') +
-    '<span class="r-value">' + value + '</span></div>';
-}
-
-function calculateEstimate() {
-  const result = document.getElementById("estimateResult");
-  const error = document.getElementById("estimateError");
-  result.innerHTML = "";
-  error.textContent = "";
-  try {
-    const role = document.getElementById("estimateRole").value;
-    const level = document.getElementById("estimateLevel").value;
-    const norm = estimateInput("estimateNorm");
-    const advance = estimateInput("estimateAdvance");
-    const morning = estimateInput("estimateMorning");
-    const day = estimateInput("estimateDay");
-    const night = estimateInput("estimateNight");
-    const relief = estimateInput("estimateRelief");
-    // Хэрэглэгчийн хүссэн, өөрчлөх шаардлагагүй тогтмол дүрмүүд.
-    const foodRate = 6000;
-    const travelRate = 4000;
-    const dayNight = 2.25;
-    const nightNight = 6.25;
-    const workedDaysField = document.getElementById("estimateWorkedDays");
-    const shifts = morning + day + night;
-    const workedDays = workedDaysField.value.trim() === "" ? shifts : estimateInput("estimateWorkedDays");
-
-    if (!(norm > 0 && norm <= 744)) throw new Error("Сарын норм цагийг шалгана уу.");
-    if ([morning,day,night,workedDays].some(n => !Number.isInteger(n) || n > 100))
-      throw new Error("Ээлж болон ажилласан хоног бүхэл тоо байх ёстой.");
-    if (workedDays > 31 || shifts > 100 || dayNight > 8 || nightNight > 8)
-      throw new Error("Ажилласан хоног, ээлжийн шөнийн цагийг шалгана уу.");
-
-    const base = estimateRoles[role].base;
-    const nightHours = day * dayNight + night * nightNight;
-    const workedHours = workedDays * 8;
-    const dayHours = workedHours - nightHours;
-    if (dayHours < 0) throw new Error("Шөнийн цаг нийт ажилласан цагаас их байна. Оруулсан хоног, ээлжийг шалгана уу.");
-    const hourly = base / norm;
-    const dayPay = hourly * dayHours;
-    const nightPay = hourly * nightHours * 1.2;
-    const foodPay = workedDays * foodRate;
-    const travelPay = workedDays * travelRate;
-    const levelPay = estimateRoles[role].levels[level];
-    const gross = dayPay + nightPay + foodPay + travelPay + levelPay;
-    const social = Math.round(gross * 0.115 * 100) / 100;
-    const tax = Math.max(0, Math.round(((gross - social) * 0.10 - relief) * 100) / 100);
-    const net = Math.round((gross - social - tax) * 100) / 100;
-    const transfer = Math.round((net - advance) * 100) / 100;
-    const hrs = n => n.toLocaleString("mn-MN", {maximumFractionDigits:2});
-    result.innerHTML = '<div class="receipt">' +
-      estimateRow("Нийт оруулсан ээлж", shifts + " ээлж") +
-      estimateRow("Бодит ажилласан хоног", workedDays + " хоног") +
-      estimateRow("Өдрийн цаг", hrs(dayHours) + " цаг") +
-      estimateRow("Шөнийн цаг", hrs(nightHours) + " цаг") +
-      estimateRow("Үндсэн цалин", estimateMoney(base)) +
-      estimateRow("Өдрийн цалин", estimateMoney(dayPay)) +
-      estimateRow("Шөнийн цалин", estimateMoney(nightPay)) +
-      estimateRow("Түвшингийн нэмэгдэл", estimateMoney(levelPay)) +
-      estimateRow("Хоолны мөнгө", estimateMoney(foodPay)) +
-      estimateRow("Унааны мөнгө", estimateMoney(travelPay)) +
-      estimateRow("Олговол зохих", estimateMoney(gross)) +
-      estimateRow("НДШ (11.5%, урьдчилсан)", estimateMoney(social)) +
-      estimateRow("ХХОАТ (урьдчилсан)", estimateMoney(tax)) +
-      estimateRow("Гар дээр авах (нийт)", estimateMoney(net)) +
-      estimateRow("Авсан урьдчилгаа", estimateMoney(advance)) +
-      estimateRow("Үлдэх олголт (ойролцоогоор)", estimateMoney(transfer), true) +
-      '</div>' +
-      (workedDays !== shifts ?
-        '<p class="estimate-warning">Оруулсан ээлжийн тоо бодит ажилласан хоногоос зөрж байна. Цалинг бодит ажилласан хоногт үндэслэж тооцсон.</p>' : '');
-  } catch (e) {
-    error.textContent = e.message;
-  }
-}
-
-/* =====================================================
-   AUTO LOGIN
-===================================================== */
-
-window.onload = async function() {
-
-  updateEstimateBase();
-
-  await loadData();
-
-
-  const saved =
-    localStorage.getItem("user");
-
-
-  if (saved) {
-
-    try {
-
-      const emp =
-        JSON.parse(saved);
-
-
-      document.getElementById(
-        "loginPanel"
-      ).style.display = "none";
-
-
-      document.getElementById(
-        "userPanel"
-      ).style.display = "block";
-      document.getElementById("preLoginCalculator").style.display = "none";
-
-
-      showEmployeeInfo(emp);
-
-      showDifference(emp);
-
-      showSalary(emp);
-
-
-    } catch (error) {
-
-      localStorage.removeItem("user");
-
-    }
-
-  }
-
-};
-
-
-/* =====================================================
-   LOGOUT
-===================================================== */
-
-function logout() {
-
-  localStorage.removeItem("user");
-
-  location.reload();
-
-}
-
-
-/* =====================================================
-   DARK MODE
-===================================================== */
-
-function toggleDark() {
-
-  document.body.classList.toggle("dark");
-
-}
-
+$("loginForm").addEventListener("submit",async e=>{
+  e.preventDefault();const btn=e.submitter;loading(btn,true);loginStatus("");
+  try{
+    await api("login",{code:$("loginCode").value.trim(),pin:$("loginPin").value});
+    $("loginPin").value="";await loadData();
+  }catch(error){loginStatus(error.message);}finally{loading(btn,false);}
+});
+$("logoutBtn").addEventListener("click",async()=>{
+  try{await api("logout",{});}finally{showLogin();$("loginPin").value="";}
+});
+$("refreshBtn").addEventListener("click",()=>loadData().catch(e=>status(e.message,"error")));
+$("monthInput").addEventListener("change",()=>loadData().catch(e=>status(e.message,"error")));
+document.querySelectorAll("[data-tab]").forEach(button=>button.addEventListener("click",()=>{
+  state.tab=button.dataset.tab;showTabs();status("");
+}));
+$("newRole").addEventListener("change",updateLevels);
+$("registerForm").addEventListener("submit",async e=>{
+  e.preventDefault();const btn=e.submitter;loading(btn,true);
+  try{
+    await api("createEmployee",{code:$("newCode").value.trim(),pin:$("newPin").value,
+      name:$("newName").value.trim(),role:$("newRole").value,level:Number($("newLevel").value)});
+    $("newPin").value="";$("newCode").value="";$("newName").value="";
+    await loadData(false);status("Ажилтан амжилттай бүртгэгдлээ.");
+  }catch(error){status(error.message,"error");}finally{loading(btn,false);}
+});
+$("resetForm").addEventListener("submit",async e=>{
+  e.preventDefault();const btn=e.submitter;loading(btn,true);
+  try{await api("resetPin",{code:$("resetCode").value,pin:$("resetPin").value});$("resetPin").value="";status("PIN шинэчлэгдлээ.");}
+  catch(error){status(error.message,"error");}finally{loading(btn,false);}
+});
+$("cashForm").addEventListener("submit",async e=>{
+  e.preventDefault();const btn=e.submitter;loading(btn,true);
+  try{
+    await api("addCash",{code:$("cashCode").value,date:$("cashDate").value,
+      amount:Number($("cashAmount").value),note:$("cashNote").value.trim()});
+    $("cashAmount").value="";$("cashNote").value="";
+    await loadData(false);status("Кассын зөрүү хадгалагдлаа.");
+  }catch(error){status(error.message,"error");}finally{loading(btn,false);}
+});
+$("monthInput").value=localMonth();$("cashDate").value=localDate();updateLevels();
+loadData(false).catch(()=>showLogin());
 </script>
-
 </body>
 </html>
