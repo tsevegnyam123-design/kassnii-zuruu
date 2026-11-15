@@ -57,7 +57,8 @@ app.get('/api/health', (_req,res) => res.json({ status: 'ok' }));
 // Initial login uses the Supabase Auth email/password configured for the admin.
 // Employee-code login is not enabled until a verified code-to-auth mapping exists.
 app.post('/api/login', rateLimit({windowMs:15*60*1000,limit:10,standardHeaders:'draft-7',legacyHeaders:false}), async (req,res) => {
-  const { email, password } = req.body || {};
+  const { email: loginId, password } = req.body || {};
+  const email = typeof loginId==='string' && /^[0-9]{6}$/.test(loginId) ? loginId+'@employee-login.gs25.invalid' : loginId;
   if (typeof email !== 'string' || typeof password !== 'string' || email.length > 254 || password.length > 1024 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return res.status(400).json({error:'Valid email and password required'});
   const client = createClient(supabaseUrl,process.env.SUPABASE_SERVICE_ROLE_KEY,{auth:{persistSession:false,autoRefreshToken:false}});
   const {data,error} = await client.auth.signInWithPassword({email,password});
@@ -280,9 +281,12 @@ function calculateSalary(b){
 app.post('/api/work-hours',authenticate,payrollAdmin,async(req,res)=>{
  const b=req.body||{};
  if(!uuidPattern.test(b.employee_id||'')||typeof b.period!=='string'||!/^\\d{4}-(0[1-9]|1[0-2])$/.test(b.period))return res.status(400).json({error:'Ажилтан эсвэл сар буруу'});
+ const {data:grade,error:gradeError}=await supabase.from('employee_profiles').select('salary_role,salary_level').eq('id',b.employee_id).maybeSingle();
+ if(gradeError||!grade?.salary_role||!grade.salary_level)return res.status(400).json({error:'Ажилтны албан тушаал болон Level-ийг бүртгэлд тохируулна уу'});
+ b.role_code=grade.salary_role;b.level_number=grade.salary_level;
  let calculation;
  try{calculation=calculateSalary(b);}catch(e){return res.status(400).json({error:e.message});}
- const {data:employee,error:employeeError}=await supabase.from('employee_profiles').select('id,branch_id').eq('id',b.employee_id).maybeSingle();
+ const {data:employee,error:employeeError}=await supabase.from('employee_profiles').select('id,branch_id,salary_role,salary_level').eq('id',b.employee_id).maybeSingle();
  if(employeeError||!employee?.branch_id)return res.status(404).json({error:'Ажилтан олдсонгүй'});
  const fields={employee_id:employee.id,branch_id:employee.branch_id,period:b.period,day_hours:b.day_hours,night_hours:b.night_hours,worked_days:b.worked_days,monthly_norm:b.monthly_norm,role_code:b.role_code,level_number:b.level_number,advance:b.advance,tax_relief:b.tax_relief,created_by:req.user.id,updated_at:new Date().toISOString()};
  const {error}=await supabase.from('employee_work_hours').upsert(fields,{onConflict:'employee_id,period'});
@@ -290,6 +294,28 @@ app.post('/api/work-hours',authenticate,payrollAdmin,async(req,res)=>{
  if(error)return res.status(500).json({error:'Ажлын цаг хадгалж чадсангүй'});
  res.json({calculation});
 });
+
+app.post('/api/employee-accounts',authenticate,payrollAdmin,async(req,res)=>{
+ const {employee_code,password}=req.body||{};
+ if(typeof employee_code!=='string'||!/^[0-9]{6}$/.test(employee_code)||typeof password!=='string'||password.length<12||password.length>128)return res.status(400).json({error:'6 оронтой ID, 12-оос дээш тэмдэгттэй нууц үг шаардлагатай'});
+ const {data:employee,error:lookupError}=await supabase.from('employee_profiles').select('id,auth_user_id,salary_role,salary_level').eq('employee_code',employee_code).maybeSingle();
+ if(lookupError||!employee)return res.status(404).json({error:'Эхлээд ажилтны анкетыг бүртгэнэ үү'});
+ if(employee.auth_user_id)return res.status(409).json({error:'Энэ ID-д нэвтрэх эрх аль хэдийн байна'});
+ const email=employee_code+'@employee-login.gs25.invalid';
+ const {data:created,error:authError}=await supabase.auth.admin.createUser({email,password,email_confirm:true,app_metadata:{account_type:'employee'}});
+ if(authError||!created?.user)return res.status(400).json({error:'Нэвтрэх эрх үүсгэж чадсангүй'});
+ const {data:updated,error:updateError}=await supabase.from('employee_profiles').update({auth_user_id:created.user.id}).eq('id',employee.id).is('auth_user_id',null).select('id').maybeSingle();
+ if(updateError||!updated){await supabase.auth.admin.deleteUser(created.user.id);return res.status(409).json({error:'Ажилтны бүртгэл холбох боломжгүй'});}
+ res.set('Cache-Control','no-store');res.status(201).json({employee_code});
+});
+app.get('/api/my-work-hours',authenticate,async(req,res)=>{
+ const {data:employee,error:e}=await supabase.from('employee_profiles').select('id').eq('auth_user_id',req.user.id).maybeSingle();
+ if(e||!employee)return res.status(404).json({error:'Ажилтны бүртгэл олдсонгүй'});
+ const {data,error}=await supabase.from('employee_work_hours').select('period,day_hours,night_hours,worked_days,monthly_norm,role_code,level_number,advance,tax_relief').eq('employee_id',employee.id).order('period',{ascending:false}).limit(24);
+ res.set('Cache-Control','no-store');if(error)return res.status(500).json({error:'Тооцоолол уншиж чадсангүй'});
+ res.json({records:(data||[]).map(row=>({...row,calculation:calculateSalary(row)}))});
+});
+
 app.get('/api/work-hours',authenticate,payrollAdmin,async(req,res)=>{
  const {data,error}=await supabase.from('employee_work_hours').select('employee_id,branch_id,period,day_hours,night_hours,worked_days,monthly_norm,role_code,level_number,advance,tax_relief').order('period',{ascending:false}).limit(200);
  res.set('Cache-Control','no-store');
@@ -299,7 +325,7 @@ app.get('/api/work-hours',authenticate,payrollAdmin,async(req,res)=>{
 
 const employeeFormFields=['surname','given_name','employee_code','job_title','start_date','status','employment_type','phone','contact_email','emergency_contact','emergency_phone','address','education','training_status','notes'];
 const dbFieldMap={contact_email:'email',emergency_contact:'emergency_contact_name',emergency_phone:'emergency_contact_phone',address:'address_text'};
-const employeeColumns=['employee_code','surname','given_name','job_title','branch_id','start_date','status','employment_type','phone','email','emergency_contact_name','emergency_contact_phone','address_text','education','training_status','notes'];
+const employeeColumns=['salary_role','salary_level','employee_code','surname','given_name','job_title','branch_id','start_date','status','employment_type','phone','email','emergency_contact_name','emergency_contact_phone','address_text','education','training_status','notes','salary_role','salary_level'];
 const employeeSelect=employeeColumns.join(',');
 async function staffScope(userId){
  const {data:role,error:roleError}=await supabase.from('portal_roles').select('role').eq('auth_user_id',userId).maybeSingle();
@@ -337,7 +363,7 @@ function publicStaff(row){
  return result;
 }
 app.get('/api/staff',authenticate,staffGuard,async(req,res)=>{
- let query=supabase.from('employee_profiles').select('id,employee_code,surname,given_name,job_title,branch_id,status').order('employee_code').limit(200);
+ let query=supabase.from('employee_profiles').select('id,employee_code,surname,given_name,job_title,salary_role,salary_level,branch_id,status').order('employee_code').limit(200);
  if(!req.staffScope.admin)query=query.eq('branch_id',req.staffScope.branchId);
  const {data,error}=await query;
  res.set('Cache-Control','no-store');
