@@ -44,7 +44,7 @@ app.post('/api/recovery/request', recoveryLimit, async (req,res) => {
 });
 app.post('/api/recovery/complete', recoveryLimit, async (req,res) => {
   const {access_token,password}=req.body||{};
-  if(typeof access_token!=='string'||access_token.length>4096||typeof password!=='string'||password.length<12||password.length>128) return res.status(400).json({error:'Холбоос эсвэл нууц үг тохирохгүй байна (хамгийн багадаа 12 тэмдэгт)'});
+  if(typeof access_token!=='string'||access_token.length>4096||typeof password!=='string'||!/^[0-9]{4}$/.test(password)) return res.status(400).json({error:'Холбоос эсвэл нууц үг тохирохгүй байна (хамгийн багадаа 12 тэмдэгт)'});
   const {data,error}=await supabase.auth.getUser(access_token);
   if(error||!data?.user) return res.status(401).json({error:'Сэргээх холбоос хүчингүй эсвэл хугацаа дууссан'});
   // Use the user's own session, not the admin API, to update their password.
@@ -303,7 +303,7 @@ app.post('/api/work-hours',authenticate,payrollAdmin,async(req,res)=>{
 
 app.post('/api/employee-accounts',authenticate,payrollAdmin,async(req,res)=>{
  const {employee_code,password}=req.body||{};
- if(typeof employee_code!=='string'||!/^[0-9]{6}$/.test(employee_code)||typeof password!=='string'||password.length<12||password.length>128)return res.status(400).json({error:'6 оронтой ID, 12-оос дээш тэмдэгттэй нууц үг шаардлагатай'});
+ if(typeof employee_code!=='string'||!/^[0-9]{6}$/.test(employee_code)||typeof password!=='string'||password.length<12||password.length>128)return res.status(400).json({error:'6 оронтой ID, яг 4 оронтой PIN шаардлагатай'});
  const {data:employee,error:lookupError}=await supabase.from('employee_profiles').select('id,auth_user_id,salary_role,salary_level').eq('employee_code',employee_code).maybeSingle();
  if(lookupError||!employee)return res.status(404).json({error:'Эхлээд ажилтны анкетыг бүртгэнэ үү'});
  if(employee.auth_user_id)return res.status(409).json({error:'Энэ ID-д нэвтрэх эрх аль хэдийн байна'});
