@@ -42,8 +42,13 @@ th,td{border-bottom:1px solid #e2e8f0;border-right:1px solid #edf1f7;padding:8px
 thead th{background:#eef4fb;color:#2b466b;position:sticky;top:0;z-index:1}
 .schedule th:first-child,.schedule td:first-child{position:sticky;left:0;z-index:2;background:white;min-width:155px}
 .schedule thead th:first-child{background:#e7f0fb;z-index:3}
+.schedule th:nth-child(2),.schedule td:nth-child(2){min-width:90px}
+.schedule th:nth-child(3),.schedule td:nth-child(3){min-width:110px}
+.schedule th:nth-child(4),.schedule td:nth-child(4){min-width:120px}
+.schedule thead th:nth-child(n+5){min-width:78px;text-align:center}
+.schedule tbody tr:nth-child(even)>td:not(:first-child){background:#fbfdff}
 .schedule td{padding:3px}
-.schedule td select{padding:7px 2px;width:59px;font-size:11px;text-align:center;border:1px solid transparent}
+.schedule td select{padding:8px 3px;width:76px;min-height:38px;font-size:11px;text-align:center;border:1px solid #e1e9f2;color:#173555;font-weight:700;cursor:pointer}
 .schedule td select.morning{background:#c9f4f4}
 .schedule td select.day{background:#fbe1ae}
 .schedule td select.night{background:#d5d5fc}
@@ -149,18 +154,23 @@ thead th{background:#eef4fb;color:#2b466b;position:sticky;top:0;z-index:1}
 const $=id=>document.getElementById(id);
 let state={data:null,tab:"schedule"};
 const roles={BM:{base:1750000,levels:{1:0,2:100000,3:350000,4:600000}},SL:{base:1300000,levels:{2:100000,3:200000,4:300000}},Staff:{base:1000000,levels:{1:100000,2:200000}}};
-const shiftNames={morning:"Ө",day:"Өд",night:"Ш"};
+const shiftNames={morning:"8 Өглөө",day:"8 Өдөр",night:"8 Шөнө"};
 const escapeHtml=value=>String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const money=value=>Number(value).toLocaleString("mn-MN",{maximumFractionDigits:2})+" ₮";
 const dcount=month=>new Date(Number(month.slice(0,4)),Number(month.slice(5,7)),0).getDate();
 const dateKey=(month,day)=>month+"-"+String(day).padStart(2,"0");
 const localMonth=()=>{let d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0");};
 const localDate=()=>{let d=new Date();return localMonth()+"-"+String(d.getDate()).padStart(2,"0");};
-const q=action=>"/api/portal?action="+encodeURIComponent(action);
+// Only public, non-secret endpoint URL lives in GitHub Pages.
+const API_BASE = "https://zxhbufwncnijmpwzokvt.supabase.co/functions/v1/portal";
+let portalSession = ""; // memory only; re-login after refresh
+const q=action=>API_BASE+"?action="+encodeURIComponent(action);
 async function api(action,body){
+  const headers=body===undefined?{}:{"Content-Type":"application/json"};
+  if(portalSession)headers["X-Portal-Session"]=portalSession;
   const r=await fetch(q(action),{method:body===undefined?"GET":"POST",
-    headers:body===undefined?{}:{"Content-Type":"application/json"},
-    credentials:"same-origin",cache:"no-store",
+    headers,
+    credentials:"omit",cache:"no-store",
     ...(body===undefined?{}:{body:JSON.stringify(body)})});
   const result=await r.json().catch(()=>({error:"Серверийн хариу буруу байна."}));
   if(!r.ok)throw new Error(result.error||"Хүсэлт амжилтгүй.");
@@ -221,7 +231,7 @@ function schedule(){
   if(!staff.length){$("schedule").innerHTML='<p class="muted">Эхлээд ажилтан бүртгэнэ үү.</p>';return;}
   const calendarDays=Array.from({length:days},(_,i)=>i+1);
   const weekday=["Ня","Да","Мя","Лх","Пү","Ба","Бя"];
-  const head='<thead><tr><th>Ажилтан</th>'+calendarDays.map(d=>'<th>'+d+'<div class="muted">'+weekday[new Date(Number(month.slice(0,4)),Number(month.slice(5,7))-1,d).getDay()]+'</div></th>').join("")+'</tr></thead>';
+  const head='<thead><tr><th>ОВОГ, НЭР</th><th>АЖИЛТНЫ КОД</th><th>АЛБАН ТУШААЛ</th><th>САЛБАР НЭГЖ</th>'+calendarDays.map(d=>'<th>'+String(d).padStart(2,'0')+'<div class="muted">'+weekday[new Date(Number(month.slice(0,4)),Number(month.slice(5,7))-1,d).getDay()]+'</div></th>').join("")+'</tr></thead>';
   const existing=new Map((state.data.shifts||[]).map(s=>[s.employee_code+"_"+s.work_date,s]));
   const rows=staff.map(s=>{
     const cols=calendarDays.map(d=>{
@@ -231,7 +241,7 @@ function schedule(){
         '<option value="" '+(!kind?"selected":"")+'>—</option>'+
         Object.keys(shiftNames).map(k=>'<option value="'+k+'" '+(k===kind?"selected":"")+'>'+shiftNames[k]+'</option>').join("")+'</select></td>';
     }).join("");
-    return '<tr><td><strong>'+escapeHtml(s.display_name)+'</strong><div class="muted tiny">'+escapeHtml(s.employee_code)+'</div></td>'+cols+'</tr>';
+    return '<tr><td><strong>'+escapeHtml(s.display_name)+'</strong></td><td>'+escapeHtml(s.employee_code)+'</td><td>'+escapeHtml(s.salary_role+' · Level '+s.level)+'</td><td>'+escapeHtml(s.branch_code)+'</td>'+cols+'</tr>';
   }).join("");
   $("schedule").innerHTML='<div class="scroll"><table class="schedule">'+head+'<tbody>'+rows+'</tbody></table></div>';
   $("schedule").querySelectorAll("select").forEach(sel=>sel.addEventListener("change",async()=>{
@@ -307,7 +317,9 @@ function render(){
 async function loadData(showMessage=true){
   const month=$("monthInput").value||localMonth();
   if(showMessage)status("Мэдээлэл ачаалж байна…");
-  const r=await fetch(q("dashboard")+"&month="+encodeURIComponent(month),{credentials:"same-origin",cache:"no-store"});
+  const r=await fetch(q("dashboard")+"&month="+encodeURIComponent(month),{
+    headers:portalSession?{"X-Portal-Session":portalSession}:{},
+    credentials:"omit",cache:"no-store"});
   if(r.status===401){showLogin();return;}
   const result=await r.json().catch(()=>({error:"Хариу буруу байна."}));
   if(!r.ok)throw new Error(result.error||"Мэдээлэл ачаалагдсангүй.");
@@ -315,6 +327,7 @@ async function loadData(showMessage=true){
   if(showMessage)status("");
 }
 function showLogin(){
+  portalSession="";
   state.data=null;$("loginPanel").hidden=false;$("portalPanel").hidden=true;$("sessionBar").hidden=true;
 }
 function updateLevels(){
@@ -325,7 +338,9 @@ function updateLevels(){
 $("loginForm").addEventListener("submit",async e=>{
   e.preventDefault();const btn=e.submitter;loading(btn,true);loginStatus("");
   try{
-    await api("login",{code:$("loginCode").value.trim(),pin:$("loginPin").value});
+    const loginResult=await api("login",{code:$("loginCode").value.trim(),pin:$("loginPin").value});
+    if(!/^[A-Za-z0-9_-]{43}$/.test(loginResult.session||""))throw new Error("Нэвтрэх сешн үүссэнгүй.");
+    portalSession=loginResult.session;
     $("loginPin").value="";await loadData();
   }catch(error){loginStatus(error.message);}finally{loading(btn,false);}
 });
