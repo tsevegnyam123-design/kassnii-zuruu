@@ -341,10 +341,7 @@ async function staffScope(userId){
   if(error)throw error;
   return {admin:true,branchId:assignment?.branch_id||null};
  }
- if(role?.role!=='manager')return null;
- const {data:assignment,error}=await supabase.from('manager_branches').select('branch_id').eq('auth_user_id',userId).maybeSingle();
- if(error)throw error;
- return assignment?.branch_id?{admin:false,branchId:assignment.branch_id}:null;
+ return null; // Only the designated HR administrator may inspect staff records.
 }
 async function staffGuard(req,res,next){
  try{const scope=await staffScope(req.user.id);if(!scope)return res.status(403).json({error:'Менежерийн салбарын эрх тохируулагдаагүй'});req.staffScope=scope;next();}
