@@ -86,7 +86,7 @@ begin
     return null;
   end if;
   if p_pin !~ '^[0-9]{4}$'
-     or account_row.pin_hash <> public.crypt(p_pin, account_row.pin_hash) then
+     or account_row.pin_hash <> extensions.crypt(p_pin, account_row.pin_hash) then
     update public.portal_v2_accounts
       set failed_attempts = case when account_row.failed_attempts >= 4 then 0
                                  else account_row.failed_attempts + 1 end,
@@ -118,7 +118,7 @@ begin
   insert into public.portal_v2_accounts (
     employee_code,pin_hash,display_name,branch_code,access_role,salary_role,level
   ) values (
-    p_code, public.crypt(p_pin,public.gen_salt('bf',12)),
+    p_code, extensions.crypt(p_pin,extensions.gen_salt('bf',12)),
     trim(p_name),trim(p_branch),'employee',p_salary_role,p_level
   );
   return p_code;
@@ -132,7 +132,7 @@ as $$
 begin
   if p_pin !~ '^[0-9]{4}$' then raise exception 'PIN must be four digits'; end if;
   update public.portal_v2_accounts
-    set pin_hash = public.crypt(p_pin,public.gen_salt('bf',12)),
+    set pin_hash = extensions.crypt(p_pin,extensions.gen_salt('bf',12)),
         failed_attempts=0, locked_until=null
   where employee_code=p_code and access_role='employee';
   if not found then raise exception 'Employee not found'; end if;
@@ -152,5 +152,5 @@ grant execute on function public.portal_v2_reset_pin(text,text) to service_role;
 -- Do not commit an actual PIN to GitHub:
 -- insert into public.portal_v2_accounts
 -- (employee_code,pin_hash,display_name,branch_code,access_role,salary_role,level)
--- values ('115091', crypt('<private-4-digit-PIN>',gen_salt('bf',12)),
+-- values ('115091', extensions.crypt('<private-4-digit-PIN>',extensions.gen_salt('bf',12)),
 --         'Салбарын менежер', '<your-branch-code>', 'manager', 'BM', 1);
