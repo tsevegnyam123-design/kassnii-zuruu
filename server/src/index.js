@@ -256,6 +256,47 @@ app.post('/api/cash-variances',authenticate,staffGuard,async(req,res)=>{
  res.status(201).json({record:data});
 });
 
+
+const salaryRules={
+ BM:{base:1750000,levels:{1:0,2:100000,3:350000,4:600000}},
+ SL:{base:1300000,levels:{2:100000,3:200000,4:300000}},
+ Staff:{base:1000000,levels:{1:100000,2:200000}}
+};
+function calculateSalary(b){
+ const rule=salaryRules[b.role_code];
+ if(!rule||!Object.hasOwn(rule.levels,String(b.level_number)))throw Error('Албан тушаал эсвэл Level буруу');
+ const nums=['day_hours','night_hours','worked_days','monthly_norm','advance','tax_relief'];
+ if(nums.some(k=>typeof b[k]!=='number'||!Number.isFinite(b[k])||b[k]<0)||b.monthly_norm<=0||b.monthly_norm>744||b.worked_days>31||!Number.isInteger(b.worked_days)||b.day_hours+b.night_hours>744)throw Error('Ажилласан цаг, норм эсвэл хоног буруу');
+ const round=n=>Math.round(n*100)/100;
+ const hourly=rule.base/b.monthly_norm;
+ const dayPay=hourly*b.day_hours,nightPay=hourly*b.night_hours*1.2;
+ const foodPay=b.worked_days*6000,travelPay=b.worked_days*4000,levelPay=rule.levels[b.level_number];
+ const gross=dayPay+nightPay+foodPay+travelPay+levelPay;
+ const social=round(gross*0.115);
+ const tax=Math.max(0,round((gross-social)*0.10-b.tax_relief));
+ const net=round(gross-social-tax);
+ return {base_salary:rule.base,day_pay:round(dayPay),night_pay:round(nightPay),food_pay:foodPay,travel_pay:travelPay,level_pay:levelPay,gross:round(gross),social,tax,net,transfer:round(net-b.advance)};
+}
+app.post('/api/work-hours',authenticate,payrollAdmin,async(req,res)=>{
+ const b=req.body||{};
+ if(!uuidPattern.test(b.employee_id||'')||typeof b.period!=='string'||!/^\\d{4}-(0[1-9]|1[0-2])$/.test(b.period))return res.status(400).json({error:'Ажилтан эсвэл сар буруу'});
+ let calculation;
+ try{calculation=calculateSalary(b);}catch(e){return res.status(400).json({error:e.message});}
+ const {data:employee,error:employeeError}=await supabase.from('employee_profiles').select('id,branch_id').eq('id',b.employee_id).maybeSingle();
+ if(employeeError||!employee?.branch_id)return res.status(404).json({error:'Ажилтан олдсонгүй'});
+ const fields={employee_id:employee.id,branch_id:employee.branch_id,period:b.period,day_hours:b.day_hours,night_hours:b.night_hours,worked_days:b.worked_days,monthly_norm:b.monthly_norm,role_code:b.role_code,level_number:b.level_number,advance:b.advance,tax_relief:b.tax_relief,created_by:req.user.id,updated_at:new Date().toISOString()};
+ const {error}=await supabase.from('employee_work_hours').upsert(fields,{onConflict:'employee_id,period'});
+ res.set('Cache-Control','no-store');
+ if(error)return res.status(500).json({error:'Ажлын цаг хадгалж чадсангүй'});
+ res.json({calculation});
+});
+app.get('/api/work-hours',authenticate,payrollAdmin,async(req,res)=>{
+ const {data,error}=await supabase.from('employee_work_hours').select('employee_id,branch_id,period,day_hours,night_hours,worked_days,monthly_norm,role_code,level_number,advance,tax_relief').order('period',{ascending:false}).limit(200);
+ res.set('Cache-Control','no-store');
+ if(error)return res.status(500).json({error:'Ажлын цаг уншиж чадсангүй'});
+ res.json({records:(data||[]).map(row=>({...row,calculation:calculateSalary(row)}))});
+});
+
 const employeeFormFields=['surname','given_name','employee_code','job_title','start_date','status','employment_type','phone','contact_email','emergency_contact','emergency_phone','address','education','training_status','notes'];
 const dbFieldMap={contact_email:'email',emergency_contact:'emergency_contact_name',emergency_phone:'emergency_contact_phone',address:'address_text'};
 const employeeColumns=['employee_code','surname','given_name','job_title','branch_id','start_date','status','employment_type','phone','email','emergency_contact_name','emergency_contact_phone','address_text','education','training_status','notes'];
