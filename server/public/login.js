@@ -49,7 +49,7 @@ let editingStaffCode=null;
 const staffInputs={};
 for(const [label,name,type] of fields.filter(x=>x[1]!=='branch_code'&&x[1]!=='employee_code')){
  const el=document.createElement('label');el.textContent=label;
- const input=document.createElement('input');input.name=name;input.type=type||'text';input.maxLength=300;input.autocomplete='off';
+ const input=document.createElement(name==='job_title'||name==='status'?'select':'input');input.name=name;if(input.tagName==='INPUT'){input.type=type||'text';input.maxLength=300;}else{const choices=name==='job_title'?[['','Сонгох'],['BM','BM'],['SL','SL'],['Staff','Staff']]:[['active','Идэвхтэй'],['left','Ажлаас гарсан'],['transferred','Шилжсэн']];for(const [value,label] of choices){const option=document.createElement('option');option.value=value;option.textContent=label;input.append(option);}}input.autocomplete='off';
  el.append(input);$('staffFields').append(el);staffInputs[name]=input;
 }
 async function staffRequest(url,options={}){
