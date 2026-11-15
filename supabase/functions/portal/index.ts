@@ -261,12 +261,16 @@ async function handler(req, res) {
 }
 
 
-const ALLOWED_ORIGIN = "https://tsevegnyam123-design.github.io";
+const ALLOWED_ORIGINS = new Set([
+  "https://tsevegnyam123-design.github.io",
+  "https://gs25-employee-portal.vercel.app",
+  "https://gs25-employee-portal-gs-portal.vercel.app"
+]);
 
 Deno.serve(async (request) => {
   const origin = request.headers.get("origin");
   const headers = new Headers({
-    "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
+    "Access-Control-Allow-Origin": origin && ALLOWED_ORIGINS.has(origin) ? origin : "https://tsevegnyam123-design.github.io",
     "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
     "Access-Control-Allow-Headers": "content-type, x-portal-session",
     "Access-Control-Max-Age": "86400",
@@ -274,7 +278,7 @@ Deno.serve(async (request) => {
     "Cache-Control": "no-store",
     "Content-Type": "application/json; charset=utf-8"
   });
-  if (origin && origin !== ALLOWED_ORIGIN) {
+  if (origin && !ALLOWED_ORIGINS.has(origin)) {
     return new Response(JSON.stringify({ error: "Origin not allowed." }), { status: 403 });
   }
   if (request.method === "OPTIONS") return new Response(null, { status: 204, headers });
