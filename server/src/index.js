@@ -287,9 +287,9 @@ function calculateSalary(b){
 app.post('/api/work-hours',authenticate,payrollAdmin,async(req,res)=>{
  const b=req.body||{};
  if(!uuidPattern.test(b.employee_id||'')||typeof b.period!=='string'||!/^\\d{4}-(0[1-9]|1[0-2])$/.test(b.period))return res.status(400).json({error:'Ажилтан эсвэл сар буруу'});
- const {data:grade,error:gradeError}=await supabase.from('employee_profiles').select('salary_role,salary_level').eq('id',b.employee_id).maybeSingle();
- if(gradeError||!grade?.salary_role||!grade.salary_level)return res.status(400).json({error:'Ажилтны албан тушаал болон Level-ийг бүртгэлд тохируулна уу'});
- b.role_code=grade.salary_role;b.level_number=grade.salary_level;b.monthly_norm=salaryPeriodNorm(b.period);
+ const {data:grade,error:gradeError}=await supabase.from('employee_profiles').select('salary_role,job_title,salary_level').eq('id',b.employee_id).maybeSingle();
+ if(gradeError||!(grade?.salary_role||grade?.job_title)||!grade.salary_level)return res.status(400).json({error:'Ажилтны албан тушаал болон Level-ийг бүртгэлд тохируулна уу'});
+ b.role_code=grade.salary_role||grade.job_title;b.level_number=grade.salary_level;b.monthly_norm=salaryPeriodNorm(b.period);
  let calculation;
  try{calculation=calculateSalary(b);}catch(e){return res.status(400).json({error:e.message});}
  const {data:employee,error:employeeError}=await supabase.from('employee_profiles').select('id,branch_id,salary_role,salary_level').eq('id',b.employee_id).maybeSingle();
@@ -355,10 +355,13 @@ function normalizeStaffInput(body){
   const value=typeof val==='string'?val.trim():'';
   if(value.length>300)return null;
   if(key==='salary_role'&&value&&!['BM','SL','Staff'].includes(value))return null;
+  if(key==='job_title'&&value&&!['BM','SL','Staff'].includes(value))return null;
+  if(key==='status'&&value&&!['active','left','transferred'].includes(value))return null;
   if(key==='salary_level'&&value&&!/^[1-4]$/.test(value))return null;
   if(key==='start_date'&&value&&!/^\d{4}-\d{2}-\d{2}$/.test(value))return null;
   values[dbFieldMap[key]||key]=key==='salary_level'&&value?Number(value):value||null;
  }
+ if(values.job_title)values.salary_role=values.job_title;
  return values;
 }
 function publicStaff(row){
