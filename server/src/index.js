@@ -325,7 +325,7 @@ app.get('/api/work-hours',authenticate,payrollAdmin,async(req,res)=>{
 
 const employeeFormFields=['surname','given_name','employee_code','job_title','start_date','status','employment_type','phone','contact_email','emergency_contact','emergency_phone','address','education','training_status','notes'];
 const dbFieldMap={contact_email:'email',emergency_contact:'emergency_contact_name',emergency_phone:'emergency_contact_phone',address:'address_text'};
-const employeeColumns=['salary_role','salary_level','employee_code','surname','given_name','job_title','branch_id','start_date','status','employment_type','phone','email','emergency_contact_name','emergency_contact_phone','address_text','education','training_status','notes','salary_role','salary_level'];
+const employeeColumns=['employee_code','surname','given_name','job_title','branch_id','start_date','status','employment_type','phone','email','emergency_contact_name','emergency_contact_phone','address_text','education','training_status','notes','salary_role','salary_level'];
 const employeeSelect=employeeColumns.join(',');
 async function staffScope(userId){
  const {data:role,error:roleError}=await supabase.from('portal_roles').select('role').eq('auth_user_id',userId).maybeSingle();
