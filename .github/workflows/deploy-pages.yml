@@ -46,6 +46,14 @@ jobs:
             -H 'Access-Control-Request-Headers: x-portal-session, content-type' "$url")
           echo "CORS preflight status: $preflight"
           test "$preflight" = "204"
+          # Invalid synthetic login must be rejected by the database-backed PIN verifier.
+          login_code=$(curl -sS --retry 2 --max-time 20 -o /dev/null -w '%{http_code}' -X POST \
+            -H 'Origin: https://tsevegnyam123-design.github.io' \
+            -H 'Content-Type: application/json' \
+            -d '{"code":"000000000000","pin":"0000"}' \
+            'https://zxhbufwncnijmpwzokvt.supabase.co/functions/v1/portal?action=login')
+          echo "Invalid login status: $login_code"
+          test "$login_code" = "401"
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
       - name: Upload public static files
