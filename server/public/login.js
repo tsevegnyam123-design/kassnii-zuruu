@@ -146,23 +146,16 @@ function renderFinancialTable(container,columns,records){
 async function loadFinancials(){
  if(!token)return;
  $('accountCard').classList.toggle('hidden',!isAdmin);
- if(!isAdmin){$('salaryCard').classList.add('hidden');$('hoursCard').classList.add('hidden');return;}
- $('salaryCard').classList.toggle('hidden',!isAdmin);$('hoursCard').classList.toggle('hidden',!isAdmin);
+ if(!isAdmin){$('hoursCard').classList.add('hidden');return;}
+ $('hoursCard').classList.toggle('hidden',!isAdmin);
  try{
   const staff=await staffRequest('/api/staff');
-  for(const select of [$('salaryEmployee'),$('varianceEmployee'),$('hoursEmployee')])select.replaceChildren();
+  for(const select of [$('varianceEmployee'),$('hoursEmployee')])select.replaceChildren();
   for(const employee of staff.employees){financialEmployees[employee.id]=employee.employee_code+' · '+employee.surname+' '+employee.given_name;for(const select of [$('salaryEmployee'),$('varianceEmployee'),$('hoursEmployee')]){const option=document.createElement('option');option.value=employee.id;option.textContent=financialEmployees[employee.id];select.append(option);}}
-  if(isAdmin){const hours=await staffRequest('/api/work-hours');renderFinancialTable($('hoursList'),[['Сар','period'],['Ажилтан','employee_id'],['Өдрийн цаг','day_hours'],['Шөнийн цаг','night_hours']],hours.records);const payroll=await staffRequest('/api/payroll');renderFinancialTable($('salaryList'),[['Сар','period'],['Ажилтан','employee_id'],['Үндсэн','base_salary'],['Нэмэгдэл','additional_pay'],['Суутгал','deductions'],['Олгох дүн','net_salary'],['Төлөв','status']],payroll.records);}
+  if(isAdmin){const hours=await staffRequest('/api/work-hours');renderFinancialTable($('hoursList'),[['Сар','period'],['Ажилтан','employee_id'],['Өдрийн цаг','day_hours'],['Шөнийн цаг','night_hours']],hours.records);}
   const cash=await staffRequest('/api/cash-variances');renderFinancialTable($('varianceList'),[['Огноо','business_date'],['Ажилтан','employee_id'],['Тооцоолсон','expected_amount'],['Бодит','actual_amount'],['Зөрүү','variance_amount'],['Тайлбар','notes']],cash.records);
  }catch(err){$('varianceStatus').textContent=err.message;}
 }
-$('salaryForm').addEventListener('submit',async event=>{
- event.preventDefault();const data=Object.fromEntries(new FormData(event.target));
- const payload={...data,base_salary:Number(data.base_salary),additional_pay:Number(data.additional_pay),deductions:Number(data.deductions)};
- $('salaryStatus').textContent='Хадгалж байна…';
- try{await staffRequest('/api/payroll',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});$('salaryStatus').textContent='Цалин хадгалагдлаа.';await loadFinancials();}
- catch(err){$('salaryStatus').textContent=err.message;}
-});
 $('varianceForm').addEventListener('submit',async event=>{
  event.preventDefault();const data=Object.fromEntries(new FormData(event.target));
  const payload={...data,expected_amount:Number(data.expected_amount),actual_amount:Number(data.actual_amount)};
