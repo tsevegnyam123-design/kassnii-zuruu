@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="mn"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>GS25 · Ажилтны портал — Загвар</title>
+<style>
+:root{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:#172a4d;background:#f3f6fc}*{box-sizing:border-box}body{margin:0}.wrap{max-width:1040px;margin:auto;padding:24px}.top{background:#3268ef;color:white}.top .wrap{display:flex;align-items:center;justify-content:space-between}.logo{font-size:24px;font-weight:900}.logo span{background:#02d5d0;color:#2152d4;padding:5px;border-radius:8px}.sub{font-size:12px;opacity:.85}h1{font-size:25px;margin:22px 0 8px}p{color:#64748b;line-height:1.5}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.card{background:white;border:1px solid #dfe6f3;border-radius:16px;padding:22px;box-shadow:0 5px 18px #182a4a08}.card h2{font-size:18px;margin:0 0 8px}.card p{font-size:14px;margin:0 0 16px}button{background:#3268ef;border:0;border-radius:10px;color:white;font:inherit;font-weight:650;padding:12px 16px;cursor:pointer}button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #83b3ff}button:disabled{opacity:.5;cursor:not-allowed}.secondary{background:#eaf0ff;color:#2754c8}.notice{padding:14px;border:1px solid #f0d7a6;border-radius:12px;background:#fff9ed;color:#785622;font-size:14px;margin:18px 0}.hidden{display:none}.formgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}label{display:block;font-size:13px;font-weight:600}input,select{display:block;width:100%;margin-top:7px;border:1px solid #d6dfef;border-radius:10px;padding:12px;background:#fff;font:inherit}nav{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0}.tabs button{background:white;color:#3268ef;border:1px solid #cbd9f8}.tabs button[aria-selected=true]{background:#3268ef;color:white}.foot{margin-top:25px;color:#64748b;font-size:12px}@media(max-width:650px){.grid,.formgrid{grid-template-columns:1fr}.wrap{padding:16px}}
+</style></head><body>
+<header class="top"><div class="wrap"><div><div class="logo"><span>GS</span>25</div><div class="sub">Ажилтны нэгдсэн портал</div></div><div>UI Preview · V2</div></div></header>
+<main class="wrap"><h1>Тавтай морил</h1><p>Хэрэгтэй мэдээллээ нэг дороос. Гар утас, компьютер дээр ашиглахад тохиромжтой загвар.</p>
+<div class="notice" role="status"><strong>Туршилтын интерфейс.</strong> Энэ хуудас мэдээлэл хадгалахгүй, нэвтрэлт хийхгүй, бодит ажилтны мэдээлэл бүү оруулаарай. Үндсэн GS25 портал өөрчлөгдөөгүй.</div>
+<nav class="tabs" aria-label="Хэсэг сонгох"><button type="button" aria-selected="true" data-page="home">Нүүр</button><button type="button" aria-selected="false" data-page="profile">Анкет</button><button type="button" aria-selected="false" data-page="routes">Маршрут</button><button type="button" aria-selected="false" data-page="admin">Админ</button></nav>
+<section id="home" class="page"><div class="grid">
+<div class="card"><h2>📝 Миний анкет</h2><p>Хувийн мэдээлэл, боловсрол, ажиллах салбар, IBAN.</p><button data-go="profile">Анкетын загвар</button></div>
+<div class="card"><h2>📍 Ажилдаа очих</h2><p>Гэрээс салбар хүртэл явган, машин, автобусаар зорчих маршрут.</p><button data-go="routes">Маршрутын хэсэг</button></div>
+<div class="card"><h2>💳 Миний цалин</h2><p>Одоогийн Google Sheets тооцооллыг серверээр хамгаалж холбоно.</p><button disabled>Холболт хүлээгдэж байна</button></div>
+<div class="card"><h2>🧾 Кассын зөрүү</h2><p>Өмнөх тооцооллын мэдээллийг хадгална.</p><button disabled>Холболт хүлээгдэж байна</button></div></div></section>
+<section id="profile" class="page hidden"><div class="card"><h2>Ажилтны анкет · Загвар</h2><p>Энэ нь талбаруудын харагдах байдлын жишээ. Мэдээлэл илгээх боломжгүй.</p>
+<div class="formgrid">
+<label>Овог<input autocomplete="off" placeholder="Овог"></label><label>Нэр<input autocomplete="off" placeholder="Нэр"></label>
+<label>Ажилтны код<input placeholder="Ажилтны код"></label><label>Хүйс<select><option>Сонгох</option><option>Эрэгтэй</option><option>Эмэгтэй</option><option>Хариулахгүй</option></select></label>
+<label>Төрсөн огноо<input type="date"></label><label>Утас<input type="tel"></label>
+<label>И-мэйл<input type="email"></label><label>Боловсрол<input></label>
+<label>Мэргэжил<input></label><label>Гэр бүлийн байдал<input></label>
+<label>Яаралтай үед холбоо барих хүн<input></label><label>Яаралтай холбоо барих утас<input type="tel"></label>
+<label>Салбар<select><option>Салбарын мэдээлэл холбогдоогүй</option></select></label><label>Албан тушаал<input></label>
+<label>IBAN<input placeholder="MN..."></label><label>Оршин суугаа хаяг<input></label>
+</div><p>Google Maps дээр гэрийн байршил сонгох хэсгийг API холбогдсоны дараа нэмнэ.</p><button disabled>Илгээх (идэвхгүй)</button></div></section>
+<section id="routes" class="page hidden"><div class="card"><h2>Газрын зураг ба маршрут</h2><p>Гэрийн байршил болон салбарын координатыг баталгаажуулсан хэрэглэгчийн эрхээр авна. Google Maps Routes API холбогдсоны дараа явган, машинаар, нийтийн тээврээр зорчих зам, км, хугацааг үзүүлнэ.</p><button disabled>Газрын зураг холбогдоогүй</button></div></section>
+<section id="admin" class="page hidden"><div class="card"><h2>HR Dashboard</h2><p>Зөвхөн серверээр баталгаажсан hr_admin эрхтэй хэрэглэгчид нээгдэнэ. Ажилтны жагсаалт, салбарын шүүлтүүр, цалин, кассын зөрүү, Excel экспорт энд байрлана.</p><button disabled>Админ API холбогдоогүй</button></div></section>
+<div class="foot">GS25 портал · Зөвхөн хөгжүүлэлтийн загвар · Бодит хувийн мэдээлэл оруулахгүй</div></main>
+<script>
+const pages=[...document.querySelectorAll(".page")],tabs=[...document.querySelectorAll("[data-page]")];
+function show(id){pages.forEach(p=>p.classList.toggle("hidden",p.id!==id));tabs.forEach(t=>t.setAttribute("aria-selected",String(t.dataset.page===id)));window.scrollTo({top:0,behavior:"smooth"})}
+tabs.forEach(t=>t.addEventListener("click",()=>show(t.dataset.page)));
+document.querySelectorAll("[data-go]").forEach(b=>b.addEventListener("click",()=>show(b.dataset.go)));
+</script></body></html>
