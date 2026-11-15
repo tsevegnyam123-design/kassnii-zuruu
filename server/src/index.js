@@ -329,7 +329,7 @@ app.get('/api/work-hours',authenticate,payrollAdmin,async(req,res)=>{
  res.json({records:(data||[]).map(row=>({...row,calculation:calculateSalary(row)}))});
 });
 
-const employeeFormFields=['surname','given_name','employee_code','job_title','start_date','status','employment_type','phone','contact_email','emergency_contact','emergency_phone','address','education','training_status','notes'];
+const employeeFormFields=['surname','given_name','employee_code','job_title','start_date','status','employment_type','phone','contact_email','emergency_contact','emergency_phone','address','education','training_status','notes','salary_role','salary_level'];
 const dbFieldMap={contact_email:'email',emergency_contact:'emergency_contact_name',emergency_phone:'emergency_contact_phone',address:'address_text'};
 const employeeColumns=['employee_code','surname','given_name','job_title','branch_id','start_date','status','employment_type','phone','email','emergency_contact_name','emergency_contact_phone','address_text','education','training_status','notes','salary_role','salary_level'];
 const employeeSelect=employeeColumns.join(',');
@@ -357,8 +357,10 @@ function normalizeStaffInput(body){
   if(val!==null&&typeof val!=='string')return null;
   const value=typeof val==='string'?val.trim():'';
   if(value.length>300)return null;
+  if(key==='salary_role'&&value&&!['BM','SL','Staff'].includes(value))return null;
+  if(key==='salary_level'&&value&&!/^[1-4]$/.test(value))return null;
   if(key==='start_date'&&value&&!/^\d{4}-\d{2}-\d{2}$/.test(value))return null;
-  values[dbFieldMap[key]||key]=value||null;
+  values[dbFieldMap[key]||key]=key==='salary_level'&&value?Number(value):value||null;
  }
  return values;
 }
