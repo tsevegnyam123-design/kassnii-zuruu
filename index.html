@@ -47,6 +47,15 @@ thead th{background:#eef4fb;color:#2b466b;position:sticky;top:0;z-index:1}
 .schedule th:nth-child(4),.schedule td:nth-child(4){min-width:120px}
 .schedule thead th:nth-child(n+5){min-width:78px;text-align:center}
 .schedule tbody tr:nth-child(even)>td:not(:first-child){background:#fbfdff}
+.schedule thead th.advance-period{background:#dbeafe;color:#184c88;text-align:center}
+.schedule thead th.final-period{background:#e8dcff;color:#50388d;text-align:center}
+.schedule thead th.advance-date{background:#eff6ff}
+.schedule thead th.final-date{background:#f6f0ff}
+.schedule thead th.payroll-cutoff{border-right:3px solid #7d68be}
+.period-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px}
+.period-part{padding:10px 12px;border-radius:9px;background:#f1f5fc}
+.period-part strong{display:block;font-size:14px;margin-bottom:6px}
+.period-part small{font-size:12px;color:#52647e}
 .schedule td{padding:3px}
 .schedule td select{padding:8px 3px;width:76px;min-height:38px;font-size:11px;text-align:center;border:1px solid #e1e9f2;color:#173555;font-weight:700;cursor:pointer}
 .schedule td select.morning{background:#c9f4f4}
@@ -85,8 +94,9 @@ thead th{background:#eef4fb;color:#2b466b;position:sticky;top:0;z-index:1}
   <section id="portalPanel" hidden>
     <div class="toolbar card">
       <div><h1 id="welcome"></h1><div class="muted" id="subhead"></div></div>
-      <div class="actions"><label for="monthInput" style="margin:0">Сар</label><input id="monthInput" type="month" aria-label="Тайлангийн сар"><button id="refreshBtn">Шинэчлэх</button></div>
+      <div class="actions"><label for="monthInput" style="margin:0">Цалингийн сар</label><input id="monthInput" type="month" aria-label="Тайлангийн сар"><button id="refreshBtn">Шинэчлэх</button></div>
     </div>
+    <div id="periodInfo" class="card" aria-live="polite"></div>
     <div id="status" role="status" aria-live="polite"></div>
 
     <section id="managerPanel" hidden>
@@ -96,7 +106,7 @@ thead th{background:#eef4fb;color:#2b466b;position:sticky;top:0;z-index:1}
         <button data-tab="cash">Кассын зөрүү оруулах</button>
       </div>
       <div id="tabSchedule">
-        <div class="card"><h2>Ажилтны ээлжийн хуваарь</h2>
+        <div class="card"><h2>Ажилтны ээлжийн хуваарь</h2><div id="schedulePeriod" class="muted tiny"></div>
           <p class="muted tiny">Нүдэнд ээлж сонгоход тухайн өдрийн цаг менежерийн баталснаар хадгалагдана. Хоосон бол ээлжгүй.</p>
           <div class="legend"><span><i class="dot" style="background:#c9f4f4"></i>Өглөө 07:45–16:30</span><span><i class="dot" style="background:#fbe1ae"></i>Өдөр 15:15–00:15</span><span><i class="dot" style="background:#d5d5fc"></i>Шөнө 23:45–08:45</span></div>
           <div id="schedule"></div>
@@ -128,7 +138,7 @@ thead th{background:#eef4fb;color:#2b466b;position:sticky;top:0;z-index:1}
       </div>
       <div id="tabCash" hidden>
         <div class="card"><h2>Кассын зөрүү бүртгэх</h2>
-          <form id="cashForm" class="form-grid">
+          <p id="cashPeriodNote" class="muted tiny"></p><form id="cashForm" class="form-grid">
             <div class="field"><label for="cashCode">Ажилтан</label><select id="cashCode" required></select></div>
             <div class="field"><label for="cashDate">Огноо</label><input type="date" id="cashDate" required></div>
             <div class="field"><label for="cashAmount">Зөрүүний дүн (₮)</label><input type="number" id="cashAmount" step="0.01" required placeholder="Жишээ: 15000"></div>
@@ -153,14 +163,43 @@ thead th{background:#eef4fb;color:#2b466b;position:sticky;top:0;z-index:1}
 "use strict";
 const $=id=>document.getElementById(id);
 let state={data:null,tab:"schedule"};
-const roles={BM:{base:1750000,levels:{1:0,2:100000,3:350000,4:600000}},SL:{base:1300000,levels:{2:100000,3:200000,4:300000}},Staff:{base:1000000,levels:{1:100000,2:200000}}};
+const roles={BM:{base:1750000,levels:{1:0,2:100000,3:350000,4:600000}},SL:{base:1300000,levels:{2:100000,3:200000,4:300000}},Staff:{base:1000000,levels:{1:0,2:0,3:0,4:0}}};
 const shiftNames={morning:"8 Өглөө",day:"8 Өдөр",night:"8 Шөнө"};
 const escapeHtml=value=>String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const money=value=>Number(value).toLocaleString("mn-MN",{maximumFractionDigits:2})+" ₮";
-const dcount=month=>new Date(Number(month.slice(0,4)),Number(month.slice(5,7)),0).getDate();
-const dateKey=(month,day)=>month+"-"+String(day).padStart(2,"0");
-const localMonth=()=>{let d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0");};
-const localDate=()=>{let d=new Date();return localMonth()+"-"+String(d.getDate()).padStart(2,"0");};
+const localDate=()=>{
+  const d=new Date();
+  return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+};
+const localMonth=()=>{
+  // The period ending on the 25th belongs to its end month.
+  const d=new Date(),endMonth=new Date(d.getFullYear(),d.getMonth()+(d.getDate()>=26?1:0),1);
+  return endMonth.getFullYear()+"-"+String(endMonth.getMonth()+1).padStart(2,"0");
+};
+const shortDate=iso=>iso.slice(5,7)+"/"+iso.slice(8,10);
+const longDate=iso=>iso.slice(0,4)+"."+iso.slice(5,7)+"."+iso.slice(8,10);
+function payrollDates(period){
+  const first=Date.parse(period.from+"T00:00:00Z"),last=Date.parse(period.to+"T00:00:00Z");
+  const dates=[];
+  for(let ts=first;ts<=last;ts+=86400000)dates.push(new Date(ts).toISOString().slice(0,10));
+  return dates;
+}
+function periodDetails(){
+  const p=state.data.period;
+  const norm=p.fundDays!==null
+    ? "Фонт хоног: "+p.fundDays+" · Норм цаг: "+p.fundDays*8
+    : "Фонт хоног: энэ жилийн хуваарь оруулаагүй (бүртгэлтэй норм цаг ашиглана)";
+  const advanceNorm=p.advanceFundDays!==null?" · Фонт "+p.advanceFundDays+" хоног":"";
+  const finalNorm=p.finalFundDays!==null?" · Фонт "+p.finalFundDays+" хоног":"";
+  $("periodInfo").innerHTML='<div class="period-grid">'+
+    '<div class="period-part"><strong>Цалин бодох нийт хугацаа</strong><span>'+longDate(p.from)+' – '+longDate(p.to)+'</span><small>'+escapeHtml(norm)+'</small></div>'+
+    '<div class="period-part"><strong>Урьдчилгаа бодох хугацаа</strong><span>'+longDate(p.advanceFrom)+' – '+longDate(p.advanceTo)+'</span><small>'+advanceNorm+'</small></div>'+
+    '<div class="period-part"><strong>Сүүл цалин бодох хугацаа</strong><span>'+longDate(p.finalFrom)+' – '+longDate(p.finalTo)+'</span><small>'+finalNorm+'</small></div>'+
+    '</div>';
+  $("cashPeriodNote").textContent="Энэ цалингийн сарын зөрүү: "+longDate(p.from)+" – "+longDate(p.to);
+  const input=$("cashDate");input.min=p.from;input.max=p.to;
+  if(input.value<p.from || input.value>p.to) input.value=(localDate()>=p.from&&localDate()<=p.to)?localDate():p.to;
+}
 // Only public, non-secret endpoint URL lives in GitHub Pages.
 const API_BASE = "https://zxhbufwncnijmpwzokvt.supabase.co/functions/v1/portal";
 let portalSession = ""; // memory only; re-login after refresh
@@ -194,18 +233,23 @@ function salaryCalc(employee){
   const dayHours=workedDays*8-nightHours;
   const role=roles[employee.salary_role];
   const base=role.base;
-  const hourly=base/Number(employee.monthly_norm);
+  const normHours=state.data.period.fundDays!==null
+    ? state.data.period.fundDays*8
+    : Number(employee.monthly_norm);
+  const hourly=base/normHours;
   const dayPay=hourly*dayHours;
   const nightPay=hourly*nightHours*1.2;
   const food=workedDays*6000;
   const travel=workedDays*4000;
-  const levelPay=role.levels[employee.level]||0;
+  const levelPay=employee.salary_role==="Staff"?0:(role.levels[employee.level]||0);
+  const advanceWorkedDays=shifts.filter(s=>s.work_date<=state.data.period.advanceTo).length;
+  const finalWorkedDays=workedDays-advanceWorkedDays;
   const gross=dayPay+nightPay+food+travel+levelPay;
   const social=Math.round(gross*.115*100)/100;
   const tax=Math.max(0,Math.round(((gross-social)*.10-Number(employee.tax_relief_mnt))*100)/100);
   const net=Math.round((gross-social-tax)*100)/100;
   const transfer=Math.round((net-Number(employee.advance_mnt))*100)/100;
-  return {morning,day,night,workedDays,dayHours,nightHours,base,dayPay,nightPay,food,travel,levelPay,gross,social,tax,net,transfer};
+  return {morning,day,night,workedDays,advanceWorkedDays,finalWorkedDays,dayHours,nightHours,normHours,base,dayPay,nightPay,food,travel,levelPay,gross,social,tax,net,transfer};
 }
 function resultTable(headers,rows){
   if(!rows.length)return '<p class="muted">Энэ сард бүртгэл алга.</p>';
@@ -227,17 +271,27 @@ function selectEmployees(id){
   if((state.data.staff||[]).some(s=>s.employee_code===previous))$(id).value=previous;
 }
 function schedule(){
-  const staff=state.data.staff||[],month=state.data.month,days=dcount(month);
+  const staff=state.data.staff||[],p=state.data.period;
+  const dates=payrollDates(p);
+  $("schedulePeriod").textContent="Цалин бодох хугацаа: "+longDate(p.from)+" – "+longDate(p.to)+" (урьдчилгаа "+longDate(p.advanceTo)+"-нд тасална)";
   if(!staff.length){$("schedule").innerHTML='<p class="muted">Эхлээд ажилтан бүртгэнэ үү.</p>';return;}
-  const calendarDays=Array.from({length:days},(_,i)=>i+1);
   const weekday=["Ня","Да","Мя","Лх","Пү","Ба","Бя"];
-  const head='<thead><tr><th>ОВОГ, НЭР</th><th>АЖИЛТНЫ КОД</th><th>АЛБАН ТУШААЛ</th><th>САЛБАР НЭГЖ</th>'+calendarDays.map(d=>'<th>'+String(d).padStart(2,'0')+'<div class="muted">'+weekday[new Date(Number(month.slice(0,4)),Number(month.slice(5,7))-1,d).getDay()]+'</div></th>').join("")+'</tr></thead>';
+  const nAdvance=dates.filter(date=>date<=p.advanceTo).length,nFinal=dates.length-nAdvance;
+  const head='<thead><tr><th rowspan="2">ОВОГ, НЭР</th><th rowspan="2">АЖИЛТНЫ КОД</th><th rowspan="2">АЛБАН ТУШААЛ</th><th rowspan="2">САЛБАР НЭГЖ</th>'+
+    '<th class="advance-period" colspan="'+nAdvance+'">УРЬДЧИЛГАА · '+longDate(p.advanceFrom)+' – '+longDate(p.advanceTo)+'</th>'+
+    '<th class="final-period" colspan="'+nFinal+'">СҮҮЛ ЦАЛИН · '+longDate(p.finalFrom)+' – '+longDate(p.finalTo)+'</th></tr><tr>'+
+    dates.map(date=>{
+      const isAdvance=date<=p.advanceTo;
+      const dayIndex=new Date(date+"T00:00:00Z").getUTCDay();
+      return '<th title="'+date+'" class="'+(isAdvance?'advance-date':'final-date')+(date===p.advanceTo?' payroll-cutoff':'')+'">'+shortDate(date)+
+        '<div class="muted">'+weekday[dayIndex]+'</div></th>';
+    }).join("")+'</tr></thead>';
   const existing=new Map((state.data.shifts||[]).map(s=>[s.employee_code+"_"+s.work_date,s]));
   const rows=staff.map(s=>{
-    const cols=calendarDays.map(d=>{
-      const date=dateKey(month,d),saved=existing.get(s.employee_code+"_"+date);
-      const kind=saved?.shift_kind||"";
-      return '<td><select class="'+escapeHtml(kind)+'" data-emp="'+escapeHtml(s.employee_code)+'" data-date="'+escapeHtml(date)+'" aria-label="'+escapeHtml(s.display_name+" "+date)+'">'+
+    const cols=dates.map(date=>{
+      const saved=existing.get(s.employee_code+"_"+date),kind=saved?.shift_kind||"";
+      const cutoffClass=date===p.advanceTo?' class="payroll-cutoff"':'';
+      return '<td'+cutoffClass+'><select class="'+escapeHtml(kind)+'" data-emp="'+escapeHtml(s.employee_code)+'" data-date="'+date+'" aria-label="'+escapeHtml(s.display_name+" "+date)+'">'+
         '<option value="" '+(!kind?"selected":"")+'>—</option>'+
         Object.keys(shiftNames).map(k=>'<option value="'+k+'" '+(k===kind?"selected":"")+'>'+shiftNames[k]+'</option>').join("")+'</select></td>';
     }).join("");
