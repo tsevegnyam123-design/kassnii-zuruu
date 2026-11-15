@@ -214,6 +214,48 @@ app.post('/api/submissions/:id/review',authenticate,reviewScope,async(req,res)=>
  res.set('Cache-Control','no-store');res.json({status:req.body.decision});
 });
 
+
+const moneyValue=value=>typeof value==='number'&&Number.isFinite(value)&&Math.abs(value)<=1e12&&Math.round(value*100)===value*100;
+const uuidPattern=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+async function payrollAdmin(req,res,next){
+ try{if(!await isHrAdmin(req.user.id))return res.status(403).json({error:'Цалингийн мэдээлэл зөвхөн HR админд нээлттэй'});next();}
+ catch{return res.status(500).json({error:'Эрх шалгаж чадсангүй'});}
+}
+app.get('/api/payroll',authenticate,payrollAdmin,async(req,res)=>{
+ let q=supabase.from('payroll_records').select('id,employee_id,branch_id,period,base_salary,additional_pay,deductions,net_salary,status,notes,created_at').order('period',{ascending:false}).limit(200);
+ if(req.query.period){if(!/^\d{4}-(0[1-9]|1[0-2])$/.test(req.query.period))return res.status(400).json({error:'Сарын формат буруу'});q=q.eq('period',req.query.period);}
+ const {data,error}=await q;res.set('Cache-Control','no-store');
+ if(error)return res.status(500).json({error:'Цалингийн бүртгэл ачаалж чадсангүй'});
+ res.json({records:data||[]});
+});
+app.post('/api/payroll',authenticate,payrollAdmin,async(req,res)=>{
+ const b=req.body||{};
+ if(!uuidPattern.test(b.employee_id||'')||!/^\d{4}-(0[1-9]|1[0-2])$/.test(b.period||'')||![b.base_salary,b.additional_pay,b.deductions].every(v=>moneyValue(v)&&v>=0)||b.notes!=null&&(typeof b.notes!=='string'||b.notes.length>300))return res.status(400).json({error:'Цалингийн мэдээллийг шалгана уу'});
+ const {data:employee,error:employeeError}=await supabase.from('employee_profiles').select('id,branch_id').eq('id',b.employee_id).maybeSingle();
+ if(employeeError||!employee?.branch_id)return res.status(404).json({error:'Ажилтан эсвэл салбар олдсонгүй'});
+ const {data,error}=await supabase.from('payroll_records').insert({employee_id:employee.id,branch_id:employee.branch_id,period:b.period,base_salary:b.base_salary,additional_pay:b.additional_pay,deductions:b.deductions,notes:b.notes?.trim()||null,created_by:req.user.id}).select('id,net_salary').single();
+ res.set('Cache-Control','no-store');
+ if(error)return res.status(error.code==='23505'?409:500).json({error:error.code==='23505'?'Энэ ажилтны тухайн сарын цалин бүртгэлтэй':'Цалин хадгалж чадсангүй'});
+ res.status(201).json({record:data});
+});
+app.get('/api/cash-variances',authenticate,staffGuard,async(req,res)=>{
+ let q=supabase.from('cash_variances').select('id,employee_id,branch_id,business_date,expected_amount,actual_amount,variance_amount,notes,created_at').order('business_date',{ascending:false}).limit(200);
+ if(!req.staffScope.admin)q=q.eq('branch_id',req.staffScope.branchId);
+ const {data,error}=await q;res.set('Cache-Control','no-store');
+ if(error)return res.status(500).json({error:'Кассын зөрүүний бүртгэл ачаалж чадсангүй'});
+ res.json({records:data||[]});
+});
+app.post('/api/cash-variances',authenticate,staffGuard,async(req,res)=>{
+ const b=req.body||{};
+ if(!uuidPattern.test(b.employee_id||'')||typeof b.business_date!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(b.business_date)||![b.expected_amount,b.actual_amount].every(moneyValue)||b.notes!=null&&(typeof b.notes!=='string'||b.notes.length>300))return res.status(400).json({error:'Кассын зөрүүний мэдээллийг шалгана уу'});
+ const {data:employee,error:employeeError}=await supabase.from('employee_profiles').select('id,branch_id').eq('id',b.employee_id).maybeSingle();
+ if(employeeError||!employee?.branch_id||!req.staffScope.admin&&employee.branch_id!==req.staffScope.branchId)return res.status(404).json({error:'Ажилтан энэ салбарт олдсонгүй'});
+ const {data,error}=await supabase.from('cash_variances').insert({employee_id:employee.id,branch_id:employee.branch_id,business_date:b.business_date,expected_amount:b.expected_amount,actual_amount:b.actual_amount,notes:b.notes?.trim()||null,created_by:req.user.id}).select('id,variance_amount').single();
+ res.set('Cache-Control','no-store');
+ if(error)return res.status(500).json({error:'Кассын зөрүү хадгалж чадсангүй'});
+ res.status(201).json({record:data});
+});
+
 const employeeFormFields=['surname','given_name','employee_code','job_title','start_date','status','employment_type','phone','contact_email','emergency_contact','emergency_phone','address','education','training_status','notes'];
 const dbFieldMap={contact_email:'email',emergency_contact:'emergency_contact_name',emergency_phone:'emergency_contact_phone',address:'address_text'};
 const employeeColumns=['employee_code','surname','given_name','job_title','branch_id','start_date','status','employment_type','phone','email','emergency_contact_name','emergency_contact_phone','address_text','education','training_status','notes'];
