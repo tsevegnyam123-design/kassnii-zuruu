@@ -156,11 +156,16 @@ const dcount=month=>new Date(Number(month.slice(0,4)),Number(month.slice(5,7)),0
 const dateKey=(month,day)=>month+"-"+String(day).padStart(2,"0");
 const localMonth=()=>{let d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0");};
 const localDate=()=>{let d=new Date();return localMonth()+"-"+String(d.getDate()).padStart(2,"0");};
-const q=action=>"/api/portal?action="+encodeURIComponent(action);
+// Only public, non-secret endpoint URL lives in GitHub Pages.
+const API_BASE = "https://zxhbufwncnijmpwzokvt.supabase.co/functions/v1/portal";
+let portalSession = ""; // memory only; re-login after refresh
+const q=action=>API_BASE+"?action="+encodeURIComponent(action);
 async function api(action,body){
+  const headers=body===undefined?{}:{"Content-Type":"application/json"};
+  if(portalSession)headers["X-Portal-Session"]=portalSession;
   const r=await fetch(q(action),{method:body===undefined?"GET":"POST",
-    headers:body===undefined?{}:{"Content-Type":"application/json"},
-    credentials:"same-origin",cache:"no-store",
+    headers,
+    credentials:"omit",cache:"no-store",
     ...(body===undefined?{}:{body:JSON.stringify(body)})});
   const result=await r.json().catch(()=>({error:"Серверийн хариу буруу байна."}));
   if(!r.ok)throw new Error(result.error||"Хүсэлт амжилтгүй.");
@@ -307,7 +312,9 @@ function render(){
 async function loadData(showMessage=true){
   const month=$("monthInput").value||localMonth();
   if(showMessage)status("Мэдээлэл ачаалж байна…");
-  const r=await fetch(q("dashboard")+"&month="+encodeURIComponent(month),{credentials:"same-origin",cache:"no-store"});
+  const r=await fetch(q("dashboard")+"&month="+encodeURIComponent(month),{
+    headers:portalSession?{"X-Portal-Session":portalSession}:{},
+    credentials:"omit",cache:"no-store"});
   if(r.status===401){showLogin();return;}
   const result=await r.json().catch(()=>({error:"Хариу буруу байна."}));
   if(!r.ok)throw new Error(result.error||"Мэдээлэл ачаалагдсангүй.");
@@ -315,6 +322,7 @@ async function loadData(showMessage=true){
   if(showMessage)status("");
 }
 function showLogin(){
+  portalSession="";
   state.data=null;$("loginPanel").hidden=false;$("portalPanel").hidden=true;$("sessionBar").hidden=true;
 }
 function updateLevels(){
@@ -325,7 +333,9 @@ function updateLevels(){
 $("loginForm").addEventListener("submit",async e=>{
   e.preventDefault();const btn=e.submitter;loading(btn,true);loginStatus("");
   try{
-    await api("login",{code:$("loginCode").value.trim(),pin:$("loginPin").value});
+    const loginResult=await api("login",{code:$("loginCode").value.trim(),pin:$("loginPin").value});
+    if(!/^[A-Za-z0-9_-]{43}$/.test(loginResult.session||""))throw new Error("Нэвтрэх сешн үүссэнгүй.");
+    portalSession=loginResult.session;
     $("loginPin").value="";await loadData();
   }catch(error){loginStatus(error.message);}finally{loading(btn,false);}
 });
