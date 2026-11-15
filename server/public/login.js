@@ -3,7 +3,7 @@ const fields=[['Овог','surname'],['Нэр','given_name'],['Ажилтны к
 for(const [label,name,type] of fields){const el=document.createElement('label');el.textContent=label;const input=document.createElement('input');input.name=name;input.type=type||'text';input.autocomplete='off';input.maxLength=300;input.disabled=true;el.append(input);$('profileFields').append(el);}
 $('clearProfile').addEventListener('click',()=>{$('profileForm').reset();});
 document.querySelectorAll('[data-tab]').forEach(button=>button.addEventListener('click',()=>{const tab=button.dataset.tab;document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b===button));document.querySelectorAll('.section').forEach(s=>s.classList.toggle('active',s.id===tab));}));
-$('loginForm').addEventListener('submit',async event=>{event.preventDefault();$('message').textContent='Нэвтэрч байна…';$('message').className='message';$('submit').disabled=true;try{const response=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:$('email').value,password:$('password').value}),cache:'no-store'});const data=await response.json();if(!response.ok)throw Error(data.error||'Нэвтрэх боломжгүй');token=data.access_token;$('password').value='';const meResponse=await fetch('/api/me',{headers:{Authorization:'Bearer '+token},cache:'no-store'});const me=await meResponse.json();if(!meResponse.ok)throw Error(me.error||'Мэдээлэл ачаалж чадсангүй');isAdmin=me.role==='hr_admin';const name=me.profile?.given_name||'Туршилтын хэрэглэгч';$('account').textContent=name+' · Эрх: '+(me.role||'employee');$('who').textContent=name;$('roleLabel').textContent=me.role==='hr_admin'?'HR админ':'Ажилтан';$('admin').hidden=me.role!=='hr_admin';$('loginView').classList.add('hidden');$('portal').classList.remove('hidden');await loadProfile();if(isAdmin)await loadEmployees();await loadStaff();await loadSubmissions();}catch(err){token=null;$('message').className='message error';$('message').textContent=err.message||'Алдаа гарлаа';}finally{$('submit').disabled=false;}});
+$('loginForm').addEventListener('submit',async event=>{event.preventDefault();$('message').textContent='Нэвтэрч байна…';$('message').className='message';$('submit').disabled=true;try{const response=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:$('email').value,password:$('password').value}),cache:'no-store'});const data=await response.json();if(!response.ok)throw Error(data.error||'Нэвтрэх боломжгүй');token=data.access_token;$('password').value='';const meResponse=await fetch('/api/me',{headers:{Authorization:'Bearer '+token},cache:'no-store'});const me=await meResponse.json();if(!meResponse.ok)throw Error(me.error||'Мэдээлэл ачаалж чадсангүй');isAdmin=me.role==='hr_admin';const name=me.profile?.given_name||'Туршилтын хэрэглэгч';$('account').textContent=name+' · Эрх: '+(me.role||'employee');$('who').textContent=name;$('roleLabel').textContent=me.role==='hr_admin'?'HR админ':'Ажилтан';$('admin').hidden=me.role!=='hr_admin';$('loginView').classList.add('hidden');$('portal').classList.remove('hidden');await loadProfile();if(isAdmin)await loadEmployees();await loadStaff();await loadSubmissions();await loadFinancials();}catch(err){token=null;$('message').className='message error';$('message').textContent=err.message||'Алдаа гарлаа';}finally{$('submit').disabled=false;}});
 $('logout').addEventListener('click',()=>{token=null;isAdmin=false;$('profileForm').reset();$('saveProfile').disabled=true;$('hrEmployeeCard').classList.add('hidden');$('portal').classList.add('hidden');$('loginView').classList.remove('hidden');$('who').textContent='Туршилтын орчин';$('message').textContent='Гарлаа';$('message').className='message success';});
 $('branchSearch').addEventListener('input',()=>{$('branchResult').textContent='Салбарын баталгаатай жагсаалт холбогдоогүй тул хайлтын үр дүн байхгүй.';});
 
@@ -133,3 +133,38 @@ async function loadSubmissions(){
  }catch(err){$('submissionStatus').textContent=err.message;}
 }
 $('refreshSubmissions').addEventListener('click',loadSubmissions);
+
+const financialEmployees={};
+function renderFinancialTable(container,columns,records){
+ const table=document.createElement('table'),head=document.createElement('thead'),row=document.createElement('tr');
+ for(const [label] of columns){const th=document.createElement('th');th.textContent=label;row.append(th);}head.append(row);table.append(head);
+ const body=document.createElement('tbody');
+ for(const record of records){const tr=document.createElement('tr');for(const [,key] of columns){const td=document.createElement('td');td.textContent=key==='employee_id'?(financialEmployees[record[key]]||record[key]):record[key]??'—';tr.append(td);}body.append(tr);}
+ if(!records.length){const tr=document.createElement('tr'),td=document.createElement('td');td.colSpan=columns.length;td.textContent='Бүртгэл байхгүй';tr.append(td);body.append(tr);}
+ table.append(body);container.replaceChildren(table);
+}
+async function loadFinancials(){
+ if(!token)return;
+ $('salaryCard').classList.toggle('hidden',!isAdmin);
+ try{
+  const staff=await staffRequest('/api/staff');
+  for(const select of [$('salaryEmployee'),$('varianceEmployee')])select.replaceChildren();
+  for(const employee of staff.employees){financialEmployees[employee.id]=employee.employee_code+' · '+employee.surname+' '+employee.given_name;for(const select of [$('salaryEmployee'),$('varianceEmployee')]){const option=document.createElement('option');option.value=employee.id;option.textContent=financialEmployees[employee.id];select.append(option);}}
+  if(isAdmin){const payroll=await staffRequest('/api/payroll');renderFinancialTable($('salaryList'),[['Сар','period'],['Ажилтан','employee_id'],['Үндсэн','base_salary'],['Нэмэгдэл','additional_pay'],['Суутгал','deductions'],['Олгох дүн','net_salary'],['Төлөв','status']],payroll.records);}
+  const cash=await staffRequest('/api/cash-variances');renderFinancialTable($('varianceList'),[['Огноо','business_date'],['Ажилтан','employee_id'],['Тооцоолсон','expected_amount'],['Бодит','actual_amount'],['Зөрүү','variance_amount'],['Тайлбар','notes']],cash.records);
+ }catch(err){$('varianceStatus').textContent=err.message;}
+}
+$('salaryForm').addEventListener('submit',async event=>{
+ event.preventDefault();const data=Object.fromEntries(new FormData(event.target));
+ const payload={...data,base_salary:Number(data.base_salary),additional_pay:Number(data.additional_pay),deductions:Number(data.deductions)};
+ $('salaryStatus').textContent='Хадгалж байна…';
+ try{await staffRequest('/api/payroll',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});$('salaryStatus').textContent='Цалин хадгалагдлаа.';await loadFinancials();}
+ catch(err){$('salaryStatus').textContent=err.message;}
+});
+$('varianceForm').addEventListener('submit',async event=>{
+ event.preventDefault();const data=Object.fromEntries(new FormData(event.target));
+ const payload={...data,expected_amount:Number(data.expected_amount),actual_amount:Number(data.actual_amount)};
+ $('varianceStatus').textContent='Хадгалж байна…';
+ try{await staffRequest('/api/cash-variances',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});$('varianceStatus').textContent='Кассын зөрүү хадгалагдлаа.';await loadFinancials();}
+ catch(err){$('varianceStatus').textContent=err.message;}
+});
