@@ -63,8 +63,8 @@ function parseResponse(text) {
 }
 
 async function db(method, path, payload, extras = {}) {
-  const host = process.env.SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const host = Deno.env.get("SUPABASE_URL");
+  const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   ensure(host && key, 503, "Системийн мэдээллийн сан тохируулаагүй байна.");
   const headers = {
     "apikey": key,
