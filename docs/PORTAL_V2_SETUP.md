@@ -1,3 +1,5 @@
+> **2026-11-16 ШИНЭ ЗААВАР:** Вебийг Vercel-гүй, GitHub Pages + Supabase Edge Functions дээр ажиллуулах бол [GITHUB_PAGES_SETUP.md](GITHUB_PAGES_SETUP.md)-ийг ашиглана уу. Доорх нь зөвхөн хуучин Vercel хувилбарын лавлах заавар юм.
+
 # GS25 Portal v2 — Менежер + ажилтны портал
 
 ## Шинэ шаардлага
