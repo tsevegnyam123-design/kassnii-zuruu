@@ -8,6 +8,7 @@ on:
       - api/portal.js
       - supabase/functions/portal/index.ts
       - tests/payroll-periods.test.mjs
+      - tests/cash-balances.test.mjs
       - .github/workflows/deploy-pages.yml
   workflow_dispatch:
 
@@ -34,7 +35,7 @@ jobs:
           cp index.html _site/index.html
           touch _site/.nojekyll
       - name: Verify all 2026 payroll period and Staff salary rules
-        run: node --test tests/payroll-periods.test.mjs
+        run: node --test tests/payroll-periods.test.mjs tests/cash-balances.test.mjs
       - name: Smoke-test protected Supabase API (no credentials)
         shell: bash
         run: |

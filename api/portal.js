@@ -148,11 +148,16 @@ async function dashboard(user, month) {
     const staff = await db("GET", "/rest/v1/portal_v2_accounts?select=employee_code,display_name,branch_code,salary_role,level,monthly_norm,tax_relief_mnt,advance_mnt&access_role=eq.employee&is_active=eq.true&branch_code=eq." + q(user.branch_code) + "&order=employee_code.asc");
     const codes = staff.map(x => x.employee_code);
     const ids = codes.length ? "&employee_code=in.(" + codes.map(q).join(",") + ")" : "&employee_code=eq.__none__";
-    const [shifts, cash] = await Promise.all([
+    const [shifts, cash, cashSummary] = await Promise.all([
       db("GET", "/rest/v1/portal_v2_shifts?select=employee_code,work_date,shift_kind,approved&work_date=gte." + range.from + "&work_date=lt." + range.next + ids + "&order=work_date.asc"),
-      db("GET", "/rest/v1/portal_v2_cash?select=id,employee_code,business_date,amount_mnt,explanation,entered_by,created_at&business_date=gte." + range.from + "&business_date=lt." + range.next + ids + "&order=created_at.desc")
+      db("GET", "/rest/v1/portal_v2_cash?select=id,employee_code,business_date,amount_mnt,explanation,entered_by,created_at&business_date=gte." + range.from + "&business_date=lt." + range.next + ids + "&order=created_at.desc"),
+      db("POST", "/rest/v1/rpc/portal_v2_cash_summary", {
+        p_manager_code: user.employee_code,
+        p_from: range.from,
+        p_to: range.to
+      })
     ]);
-    return { user, staff, shifts, cash, month, period: range };
+    return { user, staff, shifts, cash, cashSummary, month, period: range };
   }
   const [shifts, cash] = await Promise.all([
     db("GET", "/rest/v1/portal_v2_shifts?select=employee_code,work_date,shift_kind,approved&employee_code=eq." + q(user.employee_code) + "&work_date=gte." + range.from + "&work_date=lt." + range.next + "&order=work_date.asc"),

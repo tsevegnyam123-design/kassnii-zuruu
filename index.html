@@ -71,6 +71,10 @@ thead th{background:#eef4fb;color:#2b466b;position:sticky;top:0;z-index:1}
 .receipt{max-width:630px}.receipt-row{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:9px 3px;border-bottom:1px dashed #d7e0ed}
 .receipt-row strong{text-align:right;font-variant-numeric:tabular-nums}
 .receipt-row.total{font-size:17px;font-weight:800;background:#e7f7ed;color:#006939;padding:13px;border-radius:8px;margin-top:12px}
+.cash-positive{color:#b42318;font-weight:700}
+.cash-negative{color:#08774c;font-weight:700}
+.cash-zero{color:#64748b}
+.cash-total-row td{background:#f0f5fc;font-weight:800;border-top:2px solid #abc4e4}
 @media(max-width:600px){main{padding:16px 12px 65px}.card{padding:16px}.login-wrap{margin:34px auto}header{padding:15px}h1{font-size:20px}.toolbar{align-items:flex-start}}
 </style>
 </head>
@@ -147,6 +151,13 @@ thead th{background:#eef4fb;color:#2b466b;position:sticky;top:0;z-index:1}
             <div><button class="primary" type="submit">Зөрүү хадгалах</button></div>
           </form>
           <p class="hint">Зөрүүг ажилтанд тусад нь харуулна; цалингаас автоматаар суутгахгүй. Алдааг залруулахдаа тайлбартай эсрэг дүнгээр бүртгэнэ.</p>
+        </div>
+        <div class="card">
+          <h2>Ажилтан бүрийн кассын зөрүүний эцсийн цэвэр дүн</h2>
+          <p class="muted tiny" id="cashBalancePeriod"></p>
+          <p class="hint">Энэ хүснэгтэд өмнөх хугацааны зөрүү, сонгосон хугацааны зөрүү, залруулгын сөрөг дүнг нэгтгэнэ. Энэ нь бүртгэлийн цэвэр дүн бөгөөд ажилтны баталгаажсан өр болон цалингаас суутгах дүн биш.</p>
+          <div class="summary-grid" id="cashBalanceMetrics"></div>
+          <div id="cashBalances" style="margin-top:14px"></div>
         </div>
         <div class="card"><h2>Сарын кассын зөрүүний бүртгэл</h2><div id="managerCash"></div></div>
       </div>
@@ -325,11 +336,70 @@ function showCash(id,entries,isManager){
   ].filter(x=>x!==null));
   $(id).innerHTML=resultTable(isManager?["Огноо","Ажилтны код","Зөрүүний дүн","Тайлбар"]:["Огноо","Зөрүүний дүн","Тайлбар"],rows);
 }
+// PostgreSQL NUMERIC values are represented as decimal strings; sum in integer
+// cents to avoid floating-point drift when showing cash ledger totals.
+function cashCents(value){
+  const raw=String(value??"0").trim();
+  if(!/^-?\d+(?:\.\d{1,2})?$/.test(raw)) return 0n;
+  const negative=raw.startsWith("-");
+  const [whole,fraction=""]=(negative?raw.slice(1):raw).split(".");
+  const cents=BigInt(whole)*100n+BigInt(fraction.padEnd(2,"0"));
+  return negative?-cents:cents;
+}
+function cashMoney(value){
+  const cents=typeof value==="bigint"?value:cashCents(value);
+  const negative=cents<0n,abs=negative?-cents:cents;
+  const fractional=abs%100n;
+  return (negative?"−":"")+(abs/100n).toLocaleString("mn-MN")+
+    (fractional===0n?"":"."+String(fractional).padStart(2,"0"))+" ₮";
+}
+function renderCashBalances(){
+  const rows=state.data.cashSummary||[],p=state.data.period;
+  $("cashBalancePeriod").textContent="Тайлант хугацаа: "+longDate(p.from)+" – "+longDate(p.to)+
+    " · Нийт хуримтлалын тасалбар: "+longDate(p.to);
+  const totalPeriod=rows.reduce((total,row)=>total+cashCents(row.period_mnt),0n);
+  const totalClosing=rows.reduce((total,row)=>total+cashCents(row.closing_mnt),0n);
+  const positiveCount=rows.filter(row=>cashCents(row.closing_mnt)>0n).length;
+  const positiveSum=rows.reduce((total,row)=>{
+    const value=cashCents(row.closing_mnt);
+    return total+(value>0n?value:0n);
+  },0n);
+  $("cashBalanceMetrics").innerHTML=
+    metric("Эерэг зөрүүтэй ажилтан",positiveCount+" хүн")+
+    metric("Эерэг зөрүүний нийлбэр",cashMoney(positiveSum))+
+    metric("Тайлант хугацааны цэвэр өөрчлөлт",cashMoney(totalPeriod))+
+    metric("Эцсийн цэвэр дүн (залруулга орсон)",cashMoney(totalClosing));
+  if(!rows.length){
+    $("cashBalances").innerHTML='<p class="muted">Энэ салбарт бүртгэлтэй ажилтан алга.</p>';
+    return;
+  }
+  const typeOf=cents=>cents>0n?"cash-positive":(cents<0n?"cash-negative":"cash-zero");
+  const header=["Ажилтан","Ажилтны код","Өмнөх хугацаа","Энэ хугацааны зөрүү","Эцсийн цэвэр дүн","Сүүлийн бүртгэл"];
+  const tableRows=rows.map(r=>{
+    const closing=cashCents(r.closing_mnt);
+    const cells=[
+      escapeHtml(r.display_name),
+      escapeHtml(r.employee_code),
+      cashMoney(r.opening_mnt),
+      cashMoney(r.period_mnt),
+      '<span class="'+typeOf(closing)+'">'+cashMoney(closing)+'</span>',
+      r.latest_entry_date?escapeHtml(r.latest_entry_date):"—"
+    ];
+    return "<tr>"+cells.map((cell,index)=>"<td>"+cell+"</td>").join("")+"</tr>";
+  }).join("");
+  // Only the final amount contains trusted internal markup.
+  $("cashBalances").innerHTML='<div class="scroll"><table><thead><tr>'+
+    header.map(h=>'<th>'+escapeHtml(h)+'</th>').join("")+'</tr></thead><tbody>'+
+    tableRows+'<tr class="cash-total-row"><td colspan="3">НИЙТ</td><td>'+
+    cashMoney(totalPeriod)+'</td><td>'+cashMoney(totalClosing)+'</td><td>—</td></tr></tbody></table></div>';
+}
+
 function renderManager(){
   $("newBranch").value=state.data.user.branch_code;
   selectEmployees("resetCode");selectEmployees("cashCode");
   showTabs();schedule();staffSummary();
   showCash("managerCash",state.data.cash||[],true);
+  renderCashBalances();
 }
 function receiptRow(label,value,total=false){
   return '<div class="receipt-row '+(total?"total":"")+'"><span>'+escapeHtml(label)+'</span><strong>'+escapeHtml(value)+'</strong></div>';
