@@ -311,12 +311,32 @@ function schedule(){
   }).join("");
   $("schedule").innerHTML='<div class="scroll"><table class="schedule">'+head+'<tbody>'+rows+'</tbody></table></div>';
   $("schedule").querySelectorAll("select").forEach(sel=>sel.addEventListener("change",async()=>{
+    // Keep the existing table and its horizontal position while saving.
+    // Reloading the dashboard here rebuilds the grid and jumps to column 1.
+    const code=sel.dataset.emp,date=sel.dataset.date,kind=sel.value;
+    const shifts=state.data.shifts||(state.data.shifts=[]);
+    const index=shifts.findIndex(x=>x.employee_code===code&&x.work_date===date);
+    const previous=index>=0?shifts[index].shift_kind:"";
     sel.disabled=true;status("Ээлж хадгалж байна…");
     try{
-      if(sel.value)await api("saveShift",{code:sel.dataset.emp,date:sel.dataset.date,kind:sel.value,approved:true});
-      else await api("removeShift",{code:sel.dataset.emp,date:sel.dataset.date});
-      await loadData(false);status("Ээлж баталгаажиж хадгалагдлаа.");
-    }catch(error){status(error.message,"error");await loadData(false);}
+      if(kind)await api("saveShift",{code,date,kind,approved:true});
+      else await api("removeShift",{code,date});
+      // Update local data and salary totals only; do not replace the grid DOM.
+      if(kind){
+        const saved={employee_code:code,work_date:date,shift_kind:kind,approved:true};
+        if(index>=0)shifts[index]=saved;
+        else shifts.push(saved);
+      }else if(index>=0)shifts.splice(index,1);
+      sel.className=kind;
+      staffSummary();
+      status("Ээлж баталгаажиж хадгалагдлаа.");
+    }catch(error){
+      sel.value=previous;
+      sel.className=previous;
+      status(error.message,"error");
+    }finally{
+      sel.disabled=false;
+    }
   }));
 }
 function staffSummary(){
